@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin/binding"
 	"github.com/joho/godotenv"
 	"github.com/supabase-community/gotrue-go"
+	"github.com/supabase-community/gotrue-go/types"
 )
 
 var (
@@ -49,6 +50,20 @@ func main() {
 		}
 		c.JSON(http.StatusOK, resp.AccessToken)
 	})
+	r.POST("/signup", func(c *gin.Context) {
+		var body SignupBody
+		c.MustBindWith(&body, binding.JSON)
+		resp, err := authClient.Signup(types.SignupRequest{
+			Email:    body.Email,
+			Password: body.Password,
+			Data:     map[string]interface{}{"nfc": body.NFC},
+		})
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+		c.JSON(http.StatusOK, resp.AccessToken)
+	})
 
 	r.Run()
 }
@@ -56,4 +71,10 @@ func main() {
 type LoginBody struct {
 	Email    string `json:"email" binding:"required"`
 	Password string `json:"password" binding:"required"`
+}
+
+type SignupBody struct {
+	Email    string `json:"email" binding:"required"`
+	Password string `json:"password" binding:"required"`
+	NFC      string `json:"nfc" binding:"required"`
 }
