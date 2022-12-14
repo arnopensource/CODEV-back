@@ -98,6 +98,19 @@ func main() {
 		}
 		c.JSON(http.StatusOK, token)
 	})
+	r.PUT("/nfc/id", func(c *gin.Context) {
+		var body NFCModificationBody
+		c.MustBindWith(&body, binding.JSON)
+
+		_, err := authClient.WithToken(body.Token).UpdateUser(types.UpdateUserRequest{
+			Data: map[string]interface{}{"nfc": body.NFC},
+		})
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+		}
+
+		c.JSON(http.StatusOK, "ok")
+	})
 
 	r.Run()
 }
@@ -115,4 +128,9 @@ type SignupBody struct {
 
 type NFCLoginBody struct {
 	NFC string `json:"nfc" binding:"required"`
+}
+
+type NFCModificationBody struct {
+	Token string `json:"token" binding:"required"`
+	NFC   string `json:"nfc" binding:"required"`
 }
