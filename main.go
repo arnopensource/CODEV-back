@@ -3,18 +3,18 @@ package main
 import (
 	"context"
 	"database/sql"
-	"log"
-	"net/http"
-	"os"
-
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 	"github.com/supabase-community/gotrue-go"
 	"github.com/supabase-community/gotrue-go/types"
-
-	_ "github.com/lib/pq"
+	"log"
+	"net/http"
+	"os"
+	"strconv"
+	"time"
 )
 
 var (
@@ -41,6 +41,8 @@ func init() {
 }
 
 func main() {
+	updateDB()
+
 	db, err := sql.Open("postgres", datasource)
 	if err != nil {
 		log.Fatal(err)
@@ -110,6 +112,22 @@ func main() {
 		}
 
 		c.JSON(http.StatusOK, "ok")
+	})
+	r.GET("/rooms", func(c *gin.Context) {
+		at := time.Now()
+
+		atStr := c.Query("time")
+		if atStr != "" {
+			atInt, err := strconv.Atoi(atStr)
+			if err != nil {
+				c.AbortWithError(http.StatusBadRequest, err)
+				return
+			}
+			at = time.Unix(int64(atInt), 0)
+		}
+
+		result := getEmptyRooms(at)
+		c.JSON(http.StatusOK, result)
 	})
 
 	r.Run()

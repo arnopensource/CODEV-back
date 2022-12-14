@@ -3,6 +3,7 @@ module github.com/abc3354/CODEV-back
 go 1.19
 
 require (
+	github.com/arran4/golang-ical v0.0.0-20221122102835-109346913e54
 	github.com/gin-gonic/gin v1.8.1
 	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/joho/godotenv v1.4.0
