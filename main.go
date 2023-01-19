@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/abc3354/CODEV-back/services/ade"
 	"log"
-	"os"
 	"time"
 
 	"github.com/abc3354/CODEV-back/handlers"
@@ -21,6 +20,11 @@ func main() {
 
 	r := gin.Default()
 
+	r.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "Hello World!",
+		})
+	})
 	r.GET("/ping", handlers.Ping)
 
 	r.POST("/auth/login", handlers.Login)
@@ -44,7 +48,6 @@ func main() {
 		c.JSON(200, booking)
 	})
 
-	log.Printf("Listening on :%d", os.Getenv("PORT"))
 	if err := r.Run(); err != nil {
 		log.Fatal(err)
 	}
