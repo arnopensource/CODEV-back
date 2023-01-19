@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/abc3354/CODEV-back/services/ade"
 	"log"
+	"os"
 	"time"
 
 	"github.com/abc3354/CODEV-back/handlers"
@@ -43,6 +44,7 @@ func main() {
 		c.JSON(200, booking)
 	})
 
+	log.Printf("Listening on :%d", os.Getenv("PORT"))
 	if err := r.Run(); err != nil {
 		log.Fatal(err)
 	}
