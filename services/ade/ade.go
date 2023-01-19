@@ -1,14 +1,15 @@
-package main
+package ade
 
 import (
 	"fmt"
-	ics "github.com/arran4/golang-ical"
 	"io"
 	"net/http"
 	"net/url"
 	"sort"
 	"strings"
 	"time"
+
+	ics "github.com/arran4/golang-ical"
 )
 
 const fetchPeriod = 7 * 24 * time.Hour
@@ -25,7 +26,7 @@ type Room struct {
 
 var db = make(map[string]Room)
 
-func updateDB() {
+func Update() {
 	downloadURL := generateURL(time.Now())
 
 	client := http.Client{
@@ -141,7 +142,7 @@ type EmptyRoom struct {
 	FreeTime int    `json:"freeTime"`
 }
 
-func getEmptyRooms(at time.Time) []EmptyRoom {
+func GetEmptyRooms(at time.Time) []EmptyRoom {
 	result := make([]EmptyRoom, 0)
 	for _, room := range db {
 		var closest time.Time
