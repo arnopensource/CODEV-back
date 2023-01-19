@@ -17,7 +17,7 @@ func main() {
 
 	r := gin.Default()
 
-	r.GET("/", handlers.HelloWorld)
+	r.GET("/ping", handlers.Ping)
 
 	r.POST("/auth/login", handlers.Login)
 	r.POST("/auth/signup", handlers.Signup)
