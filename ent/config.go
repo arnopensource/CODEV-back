@@ -28,9 +28,11 @@ type config struct {
 type (
 	hooks struct {
 		Booking []ent.Hook
+		Profile []ent.Hook
 	}
 	inters struct {
 		Booking []ent.Interceptor
+		Profile []ent.Interceptor
 	}
 )
 

@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/abc3354/CODEV-back/ent/booking"
+	"github.com/abc3354/CODEV-back/ent/profile"
 )
 
 // ent aliases to avoid import conflicts in user's code.
@@ -39,6 +40,7 @@ type OrderFunc func(*sql.Selector)
 func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
 		booking.Table: booking.ValidColumn,
+		profile.Table: profile.ValidColumn,
 	}
 	check, ok := checks[table]
 	if !ok {

@@ -21,9 +21,22 @@ var (
 		Columns:    BookingsColumns,
 		PrimaryKey: []*schema.Column{BookingsColumns[0]},
 	}
+	// ProfilesColumns holds the columns for the "profiles" table.
+	ProfilesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "firstname", Type: field.TypeString},
+		{Name: "lastname", Type: field.TypeString},
+	}
+	// ProfilesTable holds the schema information for the "profiles" table.
+	ProfilesTable = &schema.Table{
+		Name:       "profiles",
+		Columns:    ProfilesColumns,
+		PrimaryKey: []*schema.Column{ProfilesColumns[0]},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		BookingsTable,
+		ProfilesTable,
 	}
 )
 

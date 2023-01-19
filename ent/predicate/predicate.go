@@ -8,3 +8,6 @@ import (
 
 // Booking is the predicate function for booking builders.
 type Booking func(*sql.Selector)
+
+// Profile is the predicate function for profile builders.
+type Profile func(*sql.Selector)

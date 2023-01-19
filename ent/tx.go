@@ -14,6 +14,8 @@ type Tx struct {
 	config
 	// Booking is the client for interacting with the Booking builders.
 	Booking *BookingClient
+	// Profile is the client for interacting with the Profile builders.
+	Profile *ProfileClient
 
 	// lazily loaded.
 	client     *Client
@@ -146,6 +148,7 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.Booking = NewBookingClient(tx.config)
+	tx.Profile = NewProfileClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.
