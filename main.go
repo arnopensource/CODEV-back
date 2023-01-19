@@ -27,7 +27,7 @@ var (
 func init() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Println("Error loading .env file")
 	}
 
 	supabaseProjectRef = os.Getenv("SUPABASE_PROJECT_REF")
@@ -36,7 +36,7 @@ func init() {
 	jwtSecret = os.Getenv("JWT_SECRET")
 
 	if supabaseProjectRef == "" || supabaseAPIKey == "" || datasource == "" || jwtSecret == "" {
-		log.Fatal(".env file is incomplete")
+		log.Fatal("Environment is incomplete")
 	}
 }
 
