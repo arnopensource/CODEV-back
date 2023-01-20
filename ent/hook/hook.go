@@ -9,16 +9,16 @@ import (
 	"github.com/abc3354/CODEV-back/ent"
 )
 
-// The BookingFunc type is an adapter to allow the use of ordinary
-// function as Booking mutator.
-type BookingFunc func(context.Context, *ent.BookingMutation) (ent.Value, error)
+// The NetworkingFunc type is an adapter to allow the use of ordinary
+// function as Networking mutator.
+type NetworkingFunc func(context.Context, *ent.NetworkingMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
-func (f BookingFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.BookingMutation); ok {
+func (f NetworkingFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.NetworkingMutation); ok {
 		return f(ctx, mv)
 	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BookingMutation", m)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.NetworkingMutation", m)
 }
 
 // The ProfileFunc type is an adapter to allow the use of ordinary
@@ -31,6 +31,42 @@ func (f ProfileFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProfileMutation", m)
+}
+
+// The ReservationFunc type is an adapter to allow the use of ordinary
+// function as Reservation mutator.
+type ReservationFunc func(context.Context, *ent.ReservationMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ReservationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ReservationMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ReservationMutation", m)
+}
+
+// The SalleFunc type is an adapter to allow the use of ordinary
+// function as Salle mutator.
+type SalleFunc func(context.Context, *ent.SalleMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SalleFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.SalleMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SalleMutation", m)
+}
+
+// The SalleDisponibleFunc type is an adapter to allow the use of ordinary
+// function as SalleDisponible mutator.
+type SalleDisponibleFunc func(context.Context, *ent.SalleDisponibleMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SalleDisponibleFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.SalleDisponibleMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SalleDisponibleMutation", m)
 }
 
 // Condition is a hook condition function.

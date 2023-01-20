@@ -20,6 +20,62 @@ type Profile struct {
 	Firstname string `json:"firstname,omitempty"`
 	// Lastname holds the value of the "lastname" field.
 	Lastname string `json:"lastname,omitempty"`
+	// Telephone holds the value of the "telephone" field.
+	Telephone string `json:"telephone,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the ProfileQuery when eager-loading is set.
+	Edges ProfileEdges `json:"edges"`
+}
+
+// ProfileEdges holds the relations/edges for other nodes in the graph.
+type ProfileEdges struct {
+	// Friends holds the value of the friends edge.
+	Friends []*Profile `json:"friends,omitempty"`
+	// SalleReservee holds the value of the salle_reservee edge.
+	SalleReservee []*Salle `json:"salle_reservee,omitempty"`
+	// Networking holds the value of the networking edge.
+	Networking []*Networking `json:"networking,omitempty"`
+	// Reservations holds the value of the reservations edge.
+	Reservations []*Reservation `json:"reservations,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [4]bool
+}
+
+// FriendsOrErr returns the Friends value or an error if the edge
+// was not loaded in eager-loading.
+func (e ProfileEdges) FriendsOrErr() ([]*Profile, error) {
+	if e.loadedTypes[0] {
+		return e.Friends, nil
+	}
+	return nil, &NotLoadedError{edge: "friends"}
+}
+
+// SalleReserveeOrErr returns the SalleReservee value or an error if the edge
+// was not loaded in eager-loading.
+func (e ProfileEdges) SalleReserveeOrErr() ([]*Salle, error) {
+	if e.loadedTypes[1] {
+		return e.SalleReservee, nil
+	}
+	return nil, &NotLoadedError{edge: "salle_reservee"}
+}
+
+// NetworkingOrErr returns the Networking value or an error if the edge
+// was not loaded in eager-loading.
+func (e ProfileEdges) NetworkingOrErr() ([]*Networking, error) {
+	if e.loadedTypes[2] {
+		return e.Networking, nil
+	}
+	return nil, &NotLoadedError{edge: "networking"}
+}
+
+// ReservationsOrErr returns the Reservations value or an error if the edge
+// was not loaded in eager-loading.
+func (e ProfileEdges) ReservationsOrErr() ([]*Reservation, error) {
+	if e.loadedTypes[3] {
+		return e.Reservations, nil
+	}
+	return nil, &NotLoadedError{edge: "reservations"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -27,7 +83,7 @@ func (*Profile) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case profile.FieldFirstname, profile.FieldLastname:
+		case profile.FieldFirstname, profile.FieldLastname, profile.FieldTelephone:
 			values[i] = new(sql.NullString)
 		case profile.FieldID:
 			values[i] = new(uuid.UUID)
@@ -64,9 +120,35 @@ func (pr *Profile) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				pr.Lastname = value.String
 			}
+		case profile.FieldTelephone:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field telephone", values[i])
+			} else if value.Valid {
+				pr.Telephone = value.String
+			}
 		}
 	}
 	return nil
+}
+
+// QueryFriends queries the "friends" edge of the Profile entity.
+func (pr *Profile) QueryFriends() *ProfileQuery {
+	return (&ProfileClient{config: pr.config}).QueryFriends(pr)
+}
+
+// QuerySalleReservee queries the "salle_reservee" edge of the Profile entity.
+func (pr *Profile) QuerySalleReservee() *SalleQuery {
+	return (&ProfileClient{config: pr.config}).QuerySalleReservee(pr)
+}
+
+// QueryNetworking queries the "networking" edge of the Profile entity.
+func (pr *Profile) QueryNetworking() *NetworkingQuery {
+	return (&ProfileClient{config: pr.config}).QueryNetworking(pr)
+}
+
+// QueryReservations queries the "reservations" edge of the Profile entity.
+func (pr *Profile) QueryReservations() *ReservationQuery {
+	return (&ProfileClient{config: pr.config}).QueryReservations(pr)
 }
 
 // Update returns a builder for updating this Profile.
@@ -97,6 +179,9 @@ func (pr *Profile) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("lastname=")
 	builder.WriteString(pr.Lastname)
+	builder.WriteString(", ")
+	builder.WriteString("telephone=")
+	builder.WriteString(pr.Telephone)
 	builder.WriteByte(')')
 	return builder.String()
 }

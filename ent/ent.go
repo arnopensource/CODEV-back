@@ -11,8 +11,11 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"github.com/abc3354/CODEV-back/ent/booking"
+	"github.com/abc3354/CODEV-back/ent/networking"
 	"github.com/abc3354/CODEV-back/ent/profile"
+	"github.com/abc3354/CODEV-back/ent/reservation"
+	"github.com/abc3354/CODEV-back/ent/salle"
+	"github.com/abc3354/CODEV-back/ent/salledisponible"
 )
 
 // ent aliases to avoid import conflicts in user's code.
@@ -39,8 +42,11 @@ type OrderFunc func(*sql.Selector)
 // columnChecker returns a function indicates if the column exists in the given column.
 func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
-		booking.Table: booking.ValidColumn,
-		profile.Table: profile.ValidColumn,
+		networking.Table:      networking.ValidColumn,
+		profile.Table:         profile.ValidColumn,
+		reservation.Table:     reservation.ValidColumn,
+		salle.Table:           salle.ValidColumn,
+		salledisponible.Table: salledisponible.ValidColumn,
 	}
 	check, ok := checks[table]
 	if !ok {

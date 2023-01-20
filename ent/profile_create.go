@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/abc3354/CODEV-back/ent/profile"
+	"github.com/abc3354/CODEV-back/ent/salle"
 	"github.com/google/uuid"
 )
 
@@ -32,10 +33,46 @@ func (pc *ProfileCreate) SetLastname(s string) *ProfileCreate {
 	return pc
 }
 
+// SetTelephone sets the "telephone" field.
+func (pc *ProfileCreate) SetTelephone(s string) *ProfileCreate {
+	pc.mutation.SetTelephone(s)
+	return pc
+}
+
 // SetID sets the "id" field.
 func (pc *ProfileCreate) SetID(u uuid.UUID) *ProfileCreate {
 	pc.mutation.SetID(u)
 	return pc
+}
+
+// AddFriendIDs adds the "friends" edge to the Profile entity by IDs.
+func (pc *ProfileCreate) AddFriendIDs(ids ...uuid.UUID) *ProfileCreate {
+	pc.mutation.AddFriendIDs(ids...)
+	return pc
+}
+
+// AddFriends adds the "friends" edges to the Profile entity.
+func (pc *ProfileCreate) AddFriends(p ...*Profile) *ProfileCreate {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return pc.AddFriendIDs(ids...)
+}
+
+// AddSalleReserveeIDs adds the "salle_reservee" edge to the Salle entity by IDs.
+func (pc *ProfileCreate) AddSalleReserveeIDs(ids ...int) *ProfileCreate {
+	pc.mutation.AddSalleReserveeIDs(ids...)
+	return pc
+}
+
+// AddSalleReservee adds the "salle_reservee" edges to the Salle entity.
+func (pc *ProfileCreate) AddSalleReservee(s ...*Salle) *ProfileCreate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return pc.AddSalleReserveeIDs(ids...)
 }
 
 // Mutation returns the ProfileMutation object of the builder.
@@ -77,6 +114,9 @@ func (pc *ProfileCreate) check() error {
 	}
 	if _, ok := pc.mutation.Lastname(); !ok {
 		return &ValidationError{Name: "lastname", err: errors.New(`ent: missing required field "Profile.lastname"`)}
+	}
+	if _, ok := pc.mutation.Telephone(); !ok {
+		return &ValidationError{Name: "telephone", err: errors.New(`ent: missing required field "Profile.telephone"`)}
 	}
 	return nil
 }
@@ -126,6 +166,48 @@ func (pc *ProfileCreate) createSpec() (*Profile, *sqlgraph.CreateSpec) {
 	if value, ok := pc.mutation.Lastname(); ok {
 		_spec.SetField(profile.FieldLastname, field.TypeString, value)
 		_node.Lastname = value
+	}
+	if value, ok := pc.mutation.Telephone(); ok {
+		_spec.SetField(profile.FieldTelephone, field.TypeString, value)
+		_node.Telephone = value
+	}
+	if nodes := pc.mutation.FriendsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   profile.FriendsTable,
+			Columns: profile.FriendsPrimaryKey,
+			Bidi:    true,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: profile.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := pc.mutation.SalleReserveeIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   profile.SalleReserveeTable,
+			Columns: profile.SalleReserveePrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: salle.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

@@ -1,6 +1,10 @@
 package schema
 
-import "entgo.io/ent"
+import (
+	"entgo.io/ent"
+	"entgo.io/ent/schema/edge"
+	"entgo.io/ent/schema/field"
+)
 
 // Salle holds the schema definition for the Salle entity.
 type Salle struct {
@@ -10,20 +14,20 @@ type Salle struct {
 // Fields of the Salle.
 func (Salle) Fields() []ent.Field {
 	return []ent.Field{
-		field.Integer("id"),
 		field.String("nom"),
 		field.String("batiment"),
 		field.String("etage"),
 		field.String("num_salle"),
-		field.String("cap_max"),
+		field.Int("cap_max"),
 	}
 }
 
 // Edges of the Salle.
 func (Salle) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("id_salle", SalleDisponible.type),
-		edge.To("id_reservation", Reservation.type),
-
+		edge.From("profil_reservation", Profile.Type).
+			Ref("salle_reservee").
+			Through("reservations", Reservation.Type),
+		edge.To("disponibilite", SalleDisponible.Type),
 	}
 }

@@ -11,8 +11,39 @@ const (
 	FieldFirstname = "firstname"
 	// FieldLastname holds the string denoting the lastname field in the database.
 	FieldLastname = "lastname"
+	// FieldTelephone holds the string denoting the telephone field in the database.
+	FieldTelephone = "telephone"
+	// EdgeFriends holds the string denoting the friends edge name in mutations.
+	EdgeFriends = "friends"
+	// EdgeSalleReservee holds the string denoting the salle_reservee edge name in mutations.
+	EdgeSalleReservee = "salle_reservee"
+	// EdgeNetworking holds the string denoting the networking edge name in mutations.
+	EdgeNetworking = "networking"
+	// EdgeReservations holds the string denoting the reservations edge name in mutations.
+	EdgeReservations = "reservations"
 	// Table holds the table name of the profile in the database.
 	Table = "profiles"
+	// FriendsTable is the table that holds the friends relation/edge. The primary key declared below.
+	FriendsTable = "networkings"
+	// SalleReserveeTable is the table that holds the salle_reservee relation/edge. The primary key declared below.
+	SalleReserveeTable = "reservations"
+	// SalleReserveeInverseTable is the table name for the Salle entity.
+	// It exists in this package in order to avoid circular dependency with the "salle" package.
+	SalleReserveeInverseTable = "salles"
+	// NetworkingTable is the table that holds the networking relation/edge.
+	NetworkingTable = "networkings"
+	// NetworkingInverseTable is the table name for the Networking entity.
+	// It exists in this package in order to avoid circular dependency with the "networking" package.
+	NetworkingInverseTable = "networkings"
+	// NetworkingColumn is the table column denoting the networking relation/edge.
+	NetworkingColumn = "profile_id"
+	// ReservationsTable is the table that holds the reservations relation/edge.
+	ReservationsTable = "reservations"
+	// ReservationsInverseTable is the table name for the Reservation entity.
+	// It exists in this package in order to avoid circular dependency with the "reservation" package.
+	ReservationsInverseTable = "reservations"
+	// ReservationsColumn is the table column denoting the reservations relation/edge.
+	ReservationsColumn = "profile_id"
 )
 
 // Columns holds all SQL columns for profile fields.
@@ -20,7 +51,17 @@ var Columns = []string{
 	FieldID,
 	FieldFirstname,
 	FieldLastname,
+	FieldTelephone,
 }
+
+var (
+	// FriendsPrimaryKey and FriendsColumn2 are the table columns denoting the
+	// primary key for the friends relation (M2M).
+	FriendsPrimaryKey = []string{"profile_id", "friend_id"}
+	// SalleReserveePrimaryKey and SalleReserveeColumn2 are the table columns denoting the
+	// primary key for the salle_reservee relation (M2M).
+	SalleReserveePrimaryKey = []string{"profile_id", "salle_id"}
+)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {

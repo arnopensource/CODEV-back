@@ -4,27 +4,35 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/abc3354/CODEV-back/ent/networking"
 	"github.com/abc3354/CODEV-back/ent/predicate"
 	"github.com/abc3354/CODEV-back/ent/profile"
+	"github.com/abc3354/CODEV-back/ent/reservation"
+	"github.com/abc3354/CODEV-back/ent/salle"
 	"github.com/google/uuid"
 )
 
 // ProfileQuery is the builder for querying Profile entities.
 type ProfileQuery struct {
 	config
-	limit      *int
-	offset     *int
-	unique     *bool
-	order      []OrderFunc
-	fields     []string
-	inters     []Interceptor
-	predicates []predicate.Profile
+	limit             *int
+	offset            *int
+	unique            *bool
+	order             []OrderFunc
+	fields            []string
+	inters            []Interceptor
+	predicates        []predicate.Profile
+	withFriends       *ProfileQuery
+	withSalleReservee *SalleQuery
+	withNetworking    *NetworkingQuery
+	withReservations  *ReservationQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -59,6 +67,94 @@ func (pq *ProfileQuery) Unique(unique bool) *ProfileQuery {
 func (pq *ProfileQuery) Order(o ...OrderFunc) *ProfileQuery {
 	pq.order = append(pq.order, o...)
 	return pq
+}
+
+// QueryFriends chains the current query on the "friends" edge.
+func (pq *ProfileQuery) QueryFriends() *ProfileQuery {
+	query := (&ProfileClient{config: pq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := pq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := pq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(profile.Table, profile.FieldID, selector),
+			sqlgraph.To(profile.Table, profile.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, profile.FriendsTable, profile.FriendsPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QuerySalleReservee chains the current query on the "salle_reservee" edge.
+func (pq *ProfileQuery) QuerySalleReservee() *SalleQuery {
+	query := (&SalleClient{config: pq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := pq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := pq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(profile.Table, profile.FieldID, selector),
+			sqlgraph.To(salle.Table, salle.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, profile.SalleReserveeTable, profile.SalleReserveePrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryNetworking chains the current query on the "networking" edge.
+func (pq *ProfileQuery) QueryNetworking() *NetworkingQuery {
+	query := (&NetworkingClient{config: pq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := pq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := pq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(profile.Table, profile.FieldID, selector),
+			sqlgraph.To(networking.Table, networking.ProfileColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, profile.NetworkingTable, profile.NetworkingColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryReservations chains the current query on the "reservations" edge.
+func (pq *ProfileQuery) QueryReservations() *ReservationQuery {
+	query := (&ReservationClient{config: pq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := pq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := pq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(profile.Table, profile.FieldID, selector),
+			sqlgraph.To(reservation.Table, reservation.ProfileColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, profile.ReservationsTable, profile.ReservationsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first Profile entity from the query.
@@ -246,17 +342,65 @@ func (pq *ProfileQuery) Clone() *ProfileQuery {
 		return nil
 	}
 	return &ProfileQuery{
-		config:     pq.config,
-		limit:      pq.limit,
-		offset:     pq.offset,
-		order:      append([]OrderFunc{}, pq.order...),
-		inters:     append([]Interceptor{}, pq.inters...),
-		predicates: append([]predicate.Profile{}, pq.predicates...),
+		config:            pq.config,
+		limit:             pq.limit,
+		offset:            pq.offset,
+		order:             append([]OrderFunc{}, pq.order...),
+		inters:            append([]Interceptor{}, pq.inters...),
+		predicates:        append([]predicate.Profile{}, pq.predicates...),
+		withFriends:       pq.withFriends.Clone(),
+		withSalleReservee: pq.withSalleReservee.Clone(),
+		withNetworking:    pq.withNetworking.Clone(),
+		withReservations:  pq.withReservations.Clone(),
 		// clone intermediate query.
 		sql:    pq.sql.Clone(),
 		path:   pq.path,
 		unique: pq.unique,
 	}
+}
+
+// WithFriends tells the query-builder to eager-load the nodes that are connected to
+// the "friends" edge. The optional arguments are used to configure the query builder of the edge.
+func (pq *ProfileQuery) WithFriends(opts ...func(*ProfileQuery)) *ProfileQuery {
+	query := (&ProfileClient{config: pq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	pq.withFriends = query
+	return pq
+}
+
+// WithSalleReservee tells the query-builder to eager-load the nodes that are connected to
+// the "salle_reservee" edge. The optional arguments are used to configure the query builder of the edge.
+func (pq *ProfileQuery) WithSalleReservee(opts ...func(*SalleQuery)) *ProfileQuery {
+	query := (&SalleClient{config: pq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	pq.withSalleReservee = query
+	return pq
+}
+
+// WithNetworking tells the query-builder to eager-load the nodes that are connected to
+// the "networking" edge. The optional arguments are used to configure the query builder of the edge.
+func (pq *ProfileQuery) WithNetworking(opts ...func(*NetworkingQuery)) *ProfileQuery {
+	query := (&NetworkingClient{config: pq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	pq.withNetworking = query
+	return pq
+}
+
+// WithReservations tells the query-builder to eager-load the nodes that are connected to
+// the "reservations" edge. The optional arguments are used to configure the query builder of the edge.
+func (pq *ProfileQuery) WithReservations(opts ...func(*ReservationQuery)) *ProfileQuery {
+	query := (&ReservationClient{config: pq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	pq.withReservations = query
+	return pq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -335,8 +479,14 @@ func (pq *ProfileQuery) prepareQuery(ctx context.Context) error {
 
 func (pq *ProfileQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Profile, error) {
 	var (
-		nodes = []*Profile{}
-		_spec = pq.querySpec()
+		nodes       = []*Profile{}
+		_spec       = pq.querySpec()
+		loadedTypes = [4]bool{
+			pq.withFriends != nil,
+			pq.withSalleReservee != nil,
+			pq.withNetworking != nil,
+			pq.withReservations != nil,
+		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Profile).scanValues(nil, columns)
@@ -344,6 +494,7 @@ func (pq *ProfileQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Prof
 	_spec.Assign = func(columns []string, values []any) error {
 		node := &Profile{config: pq.config}
 		nodes = append(nodes, node)
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	for i := range hooks {
@@ -355,7 +506,206 @@ func (pq *ProfileQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Prof
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := pq.withFriends; query != nil {
+		if err := pq.loadFriends(ctx, query, nodes,
+			func(n *Profile) { n.Edges.Friends = []*Profile{} },
+			func(n *Profile, e *Profile) { n.Edges.Friends = append(n.Edges.Friends, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := pq.withSalleReservee; query != nil {
+		if err := pq.loadSalleReservee(ctx, query, nodes,
+			func(n *Profile) { n.Edges.SalleReservee = []*Salle{} },
+			func(n *Profile, e *Salle) { n.Edges.SalleReservee = append(n.Edges.SalleReservee, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := pq.withNetworking; query != nil {
+		if err := pq.loadNetworking(ctx, query, nodes,
+			func(n *Profile) { n.Edges.Networking = []*Networking{} },
+			func(n *Profile, e *Networking) { n.Edges.Networking = append(n.Edges.Networking, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := pq.withReservations; query != nil {
+		if err := pq.loadReservations(ctx, query, nodes,
+			func(n *Profile) { n.Edges.Reservations = []*Reservation{} },
+			func(n *Profile, e *Reservation) { n.Edges.Reservations = append(n.Edges.Reservations, e) }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
+}
+
+func (pq *ProfileQuery) loadFriends(ctx context.Context, query *ProfileQuery, nodes []*Profile, init func(*Profile), assign func(*Profile, *Profile)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[uuid.UUID]*Profile)
+	nids := make(map[uuid.UUID]map[*Profile]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(profile.FriendsTable)
+		s.Join(joinT).On(s.C(profile.FieldID), joinT.C(profile.FriendsPrimaryKey[1]))
+		s.Where(sql.InValues(joinT.C(profile.FriendsPrimaryKey[0]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(profile.FriendsPrimaryKey[0]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	neighbors, err := query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+		assign := spec.Assign
+		values := spec.ScanValues
+		spec.ScanValues = func(columns []string) ([]any, error) {
+			values, err := values(columns[1:])
+			if err != nil {
+				return nil, err
+			}
+			return append([]any{new(uuid.UUID)}, values...), nil
+		}
+		spec.Assign = func(columns []string, values []any) error {
+			outValue := *values[0].(*uuid.UUID)
+			inValue := *values[1].(*uuid.UUID)
+			if nids[inValue] == nil {
+				nids[inValue] = map[*Profile]struct{}{byID[outValue]: {}}
+				return assign(columns[1:], values[1:])
+			}
+			nids[inValue][byID[outValue]] = struct{}{}
+			return nil
+		}
+	})
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "friends" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
+	}
+	return nil
+}
+func (pq *ProfileQuery) loadSalleReservee(ctx context.Context, query *SalleQuery, nodes []*Profile, init func(*Profile), assign func(*Profile, *Salle)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[uuid.UUID]*Profile)
+	nids := make(map[int]map[*Profile]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(profile.SalleReserveeTable)
+		s.Join(joinT).On(s.C(salle.FieldID), joinT.C(profile.SalleReserveePrimaryKey[1]))
+		s.Where(sql.InValues(joinT.C(profile.SalleReserveePrimaryKey[0]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(profile.SalleReserveePrimaryKey[0]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	neighbors, err := query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+		assign := spec.Assign
+		values := spec.ScanValues
+		spec.ScanValues = func(columns []string) ([]any, error) {
+			values, err := values(columns[1:])
+			if err != nil {
+				return nil, err
+			}
+			return append([]any{new(uuid.UUID)}, values...), nil
+		}
+		spec.Assign = func(columns []string, values []any) error {
+			outValue := *values[0].(*uuid.UUID)
+			inValue := int(values[1].(*sql.NullInt64).Int64)
+			if nids[inValue] == nil {
+				nids[inValue] = map[*Profile]struct{}{byID[outValue]: {}}
+				return assign(columns[1:], values[1:])
+			}
+			nids[inValue][byID[outValue]] = struct{}{}
+			return nil
+		}
+	})
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "salle_reservee" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
+	}
+	return nil
+}
+func (pq *ProfileQuery) loadNetworking(ctx context.Context, query *NetworkingQuery, nodes []*Profile, init func(*Profile), assign func(*Profile, *Networking)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Profile)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.Where(predicate.Networking(func(s *sql.Selector) {
+		s.Where(sql.InValues(profile.NetworkingColumn, fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ProfileID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "profile_id" returned %v for node %v`, fk, n)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (pq *ProfileQuery) loadReservations(ctx context.Context, query *ReservationQuery, nodes []*Profile, init func(*Profile), assign func(*Profile, *Reservation)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Profile)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.Where(predicate.Reservation(func(s *sql.Selector) {
+		s.Where(sql.InValues(profile.ReservationsColumn, fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ProfileID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "profile_id" returned %v for node %v`, fk, n)
+		}
+		assign(node, n)
+	}
+	return nil
 }
 
 func (pq *ProfileQuery) sqlCount(ctx context.Context) (int, error) {

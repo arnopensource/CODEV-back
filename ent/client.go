@@ -11,11 +11,15 @@ import (
 	"github.com/abc3354/CODEV-back/ent/migrate"
 	"github.com/google/uuid"
 
-	"github.com/abc3354/CODEV-back/ent/booking"
+	"github.com/abc3354/CODEV-back/ent/networking"
 	"github.com/abc3354/CODEV-back/ent/profile"
+	"github.com/abc3354/CODEV-back/ent/reservation"
+	"github.com/abc3354/CODEV-back/ent/salle"
+	"github.com/abc3354/CODEV-back/ent/salledisponible"
 
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 // Client is the client that holds all ent builders.
@@ -23,10 +27,16 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
-	// Booking is the client for interacting with the Booking builders.
-	Booking *BookingClient
+	// Networking is the client for interacting with the Networking builders.
+	Networking *NetworkingClient
 	// Profile is the client for interacting with the Profile builders.
 	Profile *ProfileClient
+	// Reservation is the client for interacting with the Reservation builders.
+	Reservation *ReservationClient
+	// Salle is the client for interacting with the Salle builders.
+	Salle *SalleClient
+	// SalleDisponible is the client for interacting with the SalleDisponible builders.
+	SalleDisponible *SalleDisponibleClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -40,8 +50,11 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
-	c.Booking = NewBookingClient(c.config)
+	c.Networking = NewNetworkingClient(c.config)
 	c.Profile = NewProfileClient(c.config)
+	c.Reservation = NewReservationClient(c.config)
+	c.Salle = NewSalleClient(c.config)
+	c.SalleDisponible = NewSalleDisponibleClient(c.config)
 }
 
 // Open opens a database/sql.DB specified by the driver name and
@@ -73,10 +86,13 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:     ctx,
-		config:  cfg,
-		Booking: NewBookingClient(cfg),
-		Profile: NewProfileClient(cfg),
+		ctx:             ctx,
+		config:          cfg,
+		Networking:      NewNetworkingClient(cfg),
+		Profile:         NewProfileClient(cfg),
+		Reservation:     NewReservationClient(cfg),
+		Salle:           NewSalleClient(cfg),
+		SalleDisponible: NewSalleDisponibleClient(cfg),
 	}, nil
 }
 
@@ -94,17 +110,20 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:     ctx,
-		config:  cfg,
-		Booking: NewBookingClient(cfg),
-		Profile: NewProfileClient(cfg),
+		ctx:             ctx,
+		config:          cfg,
+		Networking:      NewNetworkingClient(cfg),
+		Profile:         NewProfileClient(cfg),
+		Reservation:     NewReservationClient(cfg),
+		Salle:           NewSalleClient(cfg),
+		SalleDisponible: NewSalleDisponibleClient(cfg),
 	}, nil
 }
 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		Booking.
+//		Networking.
 //		Query().
 //		Count(ctx)
 func (c *Client) Debug() *Client {
@@ -126,143 +145,138 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
-	c.Booking.Use(hooks...)
+	c.Networking.Use(hooks...)
 	c.Profile.Use(hooks...)
+	c.Reservation.Use(hooks...)
+	c.Salle.Use(hooks...)
+	c.SalleDisponible.Use(hooks...)
 }
 
 // Intercept adds the query interceptors to all the entity clients.
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
-	c.Booking.Intercept(interceptors...)
+	c.Networking.Intercept(interceptors...)
 	c.Profile.Intercept(interceptors...)
+	c.Reservation.Intercept(interceptors...)
+	c.Salle.Intercept(interceptors...)
+	c.SalleDisponible.Intercept(interceptors...)
 }
 
 // Mutate implements the ent.Mutator interface.
 func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
-	case *BookingMutation:
-		return c.Booking.mutate(ctx, m)
+	case *NetworkingMutation:
+		return c.Networking.mutate(ctx, m)
 	case *ProfileMutation:
 		return c.Profile.mutate(ctx, m)
+	case *ReservationMutation:
+		return c.Reservation.mutate(ctx, m)
+	case *SalleMutation:
+		return c.Salle.mutate(ctx, m)
+	case *SalleDisponibleMutation:
+		return c.SalleDisponible.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
 	}
 }
 
-// BookingClient is a client for the Booking schema.
-type BookingClient struct {
+// NetworkingClient is a client for the Networking schema.
+type NetworkingClient struct {
 	config
 }
 
-// NewBookingClient returns a client for the Booking from the given config.
-func NewBookingClient(c config) *BookingClient {
-	return &BookingClient{config: c}
+// NewNetworkingClient returns a client for the Networking from the given config.
+func NewNetworkingClient(c config) *NetworkingClient {
+	return &NetworkingClient{config: c}
 }
 
 // Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `booking.Hooks(f(g(h())))`.
-func (c *BookingClient) Use(hooks ...Hook) {
-	c.hooks.Booking = append(c.hooks.Booking, hooks...)
+// A call to `Use(f, g, h)` equals to `networking.Hooks(f(g(h())))`.
+func (c *NetworkingClient) Use(hooks ...Hook) {
+	c.hooks.Networking = append(c.hooks.Networking, hooks...)
 }
 
 // Use adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `booking.Intercept(f(g(h())))`.
-func (c *BookingClient) Intercept(interceptors ...Interceptor) {
-	c.inters.Booking = append(c.inters.Booking, interceptors...)
+// A call to `Intercept(f, g, h)` equals to `networking.Intercept(f(g(h())))`.
+func (c *NetworkingClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Networking = append(c.inters.Networking, interceptors...)
 }
 
-// Create returns a builder for creating a Booking entity.
-func (c *BookingClient) Create() *BookingCreate {
-	mutation := newBookingMutation(c.config, OpCreate)
-	return &BookingCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Create returns a builder for creating a Networking entity.
+func (c *NetworkingClient) Create() *NetworkingCreate {
+	mutation := newNetworkingMutation(c.config, OpCreate)
+	return &NetworkingCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// CreateBulk returns a builder for creating a bulk of Booking entities.
-func (c *BookingClient) CreateBulk(builders ...*BookingCreate) *BookingCreateBulk {
-	return &BookingCreateBulk{config: c.config, builders: builders}
+// CreateBulk returns a builder for creating a bulk of Networking entities.
+func (c *NetworkingClient) CreateBulk(builders ...*NetworkingCreate) *NetworkingCreateBulk {
+	return &NetworkingCreateBulk{config: c.config, builders: builders}
 }
 
-// Update returns an update builder for Booking.
-func (c *BookingClient) Update() *BookingUpdate {
-	mutation := newBookingMutation(c.config, OpUpdate)
-	return &BookingUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Update returns an update builder for Networking.
+func (c *NetworkingClient) Update() *NetworkingUpdate {
+	mutation := newNetworkingMutation(c.config, OpUpdate)
+	return &NetworkingUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *BookingClient) UpdateOne(b *Booking) *BookingUpdateOne {
-	mutation := newBookingMutation(c.config, OpUpdateOne, withBooking(b))
-	return &BookingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *NetworkingClient) UpdateOne(n *Networking) *NetworkingUpdateOne {
+	mutation := newNetworkingMutation(c.config, OpUpdateOne)
+	mutation.profile = &n.ProfileID
+	mutation.friend = &n.FriendID
+	return &NetworkingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// UpdateOneID returns an update builder for the given id.
-func (c *BookingClient) UpdateOneID(id int) *BookingUpdateOne {
-	mutation := newBookingMutation(c.config, OpUpdateOne, withBookingID(id))
-	return &BookingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Delete returns a delete builder for Networking.
+func (c *NetworkingClient) Delete() *NetworkingDelete {
+	mutation := newNetworkingMutation(c.config, OpDelete)
+	return &NetworkingDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// Delete returns a delete builder for Booking.
-func (c *BookingClient) Delete() *BookingDelete {
-	mutation := newBookingMutation(c.config, OpDelete)
-	return &BookingDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *BookingClient) DeleteOne(b *Booking) *BookingDeleteOne {
-	return c.DeleteOneID(b.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *BookingClient) DeleteOneID(id int) *BookingDeleteOne {
-	builder := c.Delete().Where(booking.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &BookingDeleteOne{builder}
-}
-
-// Query returns a query builder for Booking.
-func (c *BookingClient) Query() *BookingQuery {
-	return &BookingQuery{
+// Query returns a query builder for Networking.
+func (c *NetworkingClient) Query() *NetworkingQuery {
+	return &NetworkingQuery{
 		config: c.config,
 		inters: c.Interceptors(),
 	}
 }
 
-// Get returns a Booking entity by its id.
-func (c *BookingClient) Get(ctx context.Context, id int) (*Booking, error) {
-	return c.Query().Where(booking.ID(id)).Only(ctx)
+// QueryProfile queries the profile edge of a Networking.
+func (c *NetworkingClient) QueryProfile(n *Networking) *ProfileQuery {
+	return c.Query().
+		Where(networking.ProfileID(n.ProfileID), networking.FriendID(n.FriendID)).
+		QueryProfile()
 }
 
-// GetX is like Get, but panics if an error occurs.
-func (c *BookingClient) GetX(ctx context.Context, id int) *Booking {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
+// QueryFriend queries the friend edge of a Networking.
+func (c *NetworkingClient) QueryFriend(n *Networking) *ProfileQuery {
+	return c.Query().
+		Where(networking.ProfileID(n.ProfileID), networking.FriendID(n.FriendID)).
+		QueryFriend()
 }
 
 // Hooks returns the client hooks.
-func (c *BookingClient) Hooks() []Hook {
-	return c.hooks.Booking
+func (c *NetworkingClient) Hooks() []Hook {
+	return c.hooks.Networking
 }
 
 // Interceptors returns the client interceptors.
-func (c *BookingClient) Interceptors() []Interceptor {
-	return c.inters.Booking
+func (c *NetworkingClient) Interceptors() []Interceptor {
+	return c.inters.Networking
 }
 
-func (c *BookingClient) mutate(ctx context.Context, m *BookingMutation) (Value, error) {
+func (c *NetworkingClient) mutate(ctx context.Context, m *NetworkingMutation) (Value, error) {
 	switch m.Op() {
 	case OpCreate:
-		return (&BookingCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&NetworkingCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdate:
-		return (&BookingUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&NetworkingUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdateOne:
-		return (&BookingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&NetworkingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpDelete, OpDeleteOne:
-		return (&BookingDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+		return (&NetworkingDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
-		return nil, fmt.Errorf("ent: unknown Booking mutation op: %q", m.Op())
+		return nil, fmt.Errorf("ent: unknown Networking mutation op: %q", m.Op())
 	}
 }
 
@@ -358,6 +372,70 @@ func (c *ProfileClient) GetX(ctx context.Context, id uuid.UUID) *Profile {
 	return obj
 }
 
+// QueryFriends queries the friends edge of a Profile.
+func (c *ProfileClient) QueryFriends(pr *Profile) *ProfileQuery {
+	query := (&ProfileClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(profile.Table, profile.FieldID, id),
+			sqlgraph.To(profile.Table, profile.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, profile.FriendsTable, profile.FriendsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySalleReservee queries the salle_reservee edge of a Profile.
+func (c *ProfileClient) QuerySalleReservee(pr *Profile) *SalleQuery {
+	query := (&SalleClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(profile.Table, profile.FieldID, id),
+			sqlgraph.To(salle.Table, salle.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, profile.SalleReserveeTable, profile.SalleReserveePrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryNetworking queries the networking edge of a Profile.
+func (c *ProfileClient) QueryNetworking(pr *Profile) *NetworkingQuery {
+	query := (&NetworkingClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(profile.Table, profile.FieldID, id),
+			sqlgraph.To(networking.Table, networking.ProfileColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, profile.NetworkingTable, profile.NetworkingColumn),
+		)
+		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryReservations queries the reservations edge of a Profile.
+func (c *ProfileClient) QueryReservations(pr *Profile) *ReservationQuery {
+	query := (&ReservationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(profile.Table, profile.FieldID, id),
+			sqlgraph.To(reservation.Table, reservation.ProfileColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, profile.ReservationsTable, profile.ReservationsColumn),
+		)
+		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *ProfileClient) Hooks() []Hook {
 	return c.hooks.Profile
@@ -380,5 +458,403 @@ func (c *ProfileClient) mutate(ctx context.Context, m *ProfileMutation) (Value, 
 		return (&ProfileDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Profile mutation op: %q", m.Op())
+	}
+}
+
+// ReservationClient is a client for the Reservation schema.
+type ReservationClient struct {
+	config
+}
+
+// NewReservationClient returns a client for the Reservation from the given config.
+func NewReservationClient(c config) *ReservationClient {
+	return &ReservationClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `reservation.Hooks(f(g(h())))`.
+func (c *ReservationClient) Use(hooks ...Hook) {
+	c.hooks.Reservation = append(c.hooks.Reservation, hooks...)
+}
+
+// Use adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `reservation.Intercept(f(g(h())))`.
+func (c *ReservationClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Reservation = append(c.inters.Reservation, interceptors...)
+}
+
+// Create returns a builder for creating a Reservation entity.
+func (c *ReservationClient) Create() *ReservationCreate {
+	mutation := newReservationMutation(c.config, OpCreate)
+	return &ReservationCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Reservation entities.
+func (c *ReservationClient) CreateBulk(builders ...*ReservationCreate) *ReservationCreateBulk {
+	return &ReservationCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Reservation.
+func (c *ReservationClient) Update() *ReservationUpdate {
+	mutation := newReservationMutation(c.config, OpUpdate)
+	return &ReservationUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ReservationClient) UpdateOne(r *Reservation) *ReservationUpdateOne {
+	mutation := newReservationMutation(c.config, OpUpdateOne)
+	mutation.profile = &r.ProfileID
+	mutation.salle = &r.SalleID
+	return &ReservationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Reservation.
+func (c *ReservationClient) Delete() *ReservationDelete {
+	mutation := newReservationMutation(c.config, OpDelete)
+	return &ReservationDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Query returns a query builder for Reservation.
+func (c *ReservationClient) Query() *ReservationQuery {
+	return &ReservationQuery{
+		config: c.config,
+		inters: c.Interceptors(),
+	}
+}
+
+// QueryProfile queries the profile edge of a Reservation.
+func (c *ReservationClient) QueryProfile(r *Reservation) *ProfileQuery {
+	return c.Query().
+		Where(reservation.ProfileID(r.ProfileID), reservation.SalleID(r.SalleID)).
+		QueryProfile()
+}
+
+// QuerySalle queries the salle edge of a Reservation.
+func (c *ReservationClient) QuerySalle(r *Reservation) *SalleQuery {
+	return c.Query().
+		Where(reservation.ProfileID(r.ProfileID), reservation.SalleID(r.SalleID)).
+		QuerySalle()
+}
+
+// Hooks returns the client hooks.
+func (c *ReservationClient) Hooks() []Hook {
+	return c.hooks.Reservation
+}
+
+// Interceptors returns the client interceptors.
+func (c *ReservationClient) Interceptors() []Interceptor {
+	return c.inters.Reservation
+}
+
+func (c *ReservationClient) mutate(ctx context.Context, m *ReservationMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ReservationCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ReservationUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ReservationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ReservationDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Reservation mutation op: %q", m.Op())
+	}
+}
+
+// SalleClient is a client for the Salle schema.
+type SalleClient struct {
+	config
+}
+
+// NewSalleClient returns a client for the Salle from the given config.
+func NewSalleClient(c config) *SalleClient {
+	return &SalleClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `salle.Hooks(f(g(h())))`.
+func (c *SalleClient) Use(hooks ...Hook) {
+	c.hooks.Salle = append(c.hooks.Salle, hooks...)
+}
+
+// Use adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `salle.Intercept(f(g(h())))`.
+func (c *SalleClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Salle = append(c.inters.Salle, interceptors...)
+}
+
+// Create returns a builder for creating a Salle entity.
+func (c *SalleClient) Create() *SalleCreate {
+	mutation := newSalleMutation(c.config, OpCreate)
+	return &SalleCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Salle entities.
+func (c *SalleClient) CreateBulk(builders ...*SalleCreate) *SalleCreateBulk {
+	return &SalleCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Salle.
+func (c *SalleClient) Update() *SalleUpdate {
+	mutation := newSalleMutation(c.config, OpUpdate)
+	return &SalleUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SalleClient) UpdateOne(s *Salle) *SalleUpdateOne {
+	mutation := newSalleMutation(c.config, OpUpdateOne, withSalle(s))
+	return &SalleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SalleClient) UpdateOneID(id int) *SalleUpdateOne {
+	mutation := newSalleMutation(c.config, OpUpdateOne, withSalleID(id))
+	return &SalleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Salle.
+func (c *SalleClient) Delete() *SalleDelete {
+	mutation := newSalleMutation(c.config, OpDelete)
+	return &SalleDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SalleClient) DeleteOne(s *Salle) *SalleDeleteOne {
+	return c.DeleteOneID(s.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SalleClient) DeleteOneID(id int) *SalleDeleteOne {
+	builder := c.Delete().Where(salle.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SalleDeleteOne{builder}
+}
+
+// Query returns a query builder for Salle.
+func (c *SalleClient) Query() *SalleQuery {
+	return &SalleQuery{
+		config: c.config,
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Salle entity by its id.
+func (c *SalleClient) Get(ctx context.Context, id int) (*Salle, error) {
+	return c.Query().Where(salle.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SalleClient) GetX(ctx context.Context, id int) *Salle {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryProfilReservation queries the profil_reservation edge of a Salle.
+func (c *SalleClient) QueryProfilReservation(s *Salle) *ProfileQuery {
+	query := (&ProfileClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(salle.Table, salle.FieldID, id),
+			sqlgraph.To(profile.Table, profile.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, salle.ProfilReservationTable, salle.ProfilReservationPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryDisponibilite queries the disponibilite edge of a Salle.
+func (c *SalleClient) QueryDisponibilite(s *Salle) *SalleDisponibleQuery {
+	query := (&SalleDisponibleClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(salle.Table, salle.FieldID, id),
+			sqlgraph.To(salledisponible.Table, salledisponible.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, salle.DisponibiliteTable, salle.DisponibiliteColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryReservations queries the reservations edge of a Salle.
+func (c *SalleClient) QueryReservations(s *Salle) *ReservationQuery {
+	query := (&ReservationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(salle.Table, salle.FieldID, id),
+			sqlgraph.To(reservation.Table, reservation.SalleColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, salle.ReservationsTable, salle.ReservationsColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *SalleClient) Hooks() []Hook {
+	return c.hooks.Salle
+}
+
+// Interceptors returns the client interceptors.
+func (c *SalleClient) Interceptors() []Interceptor {
+	return c.inters.Salle
+}
+
+func (c *SalleClient) mutate(ctx context.Context, m *SalleMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SalleCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SalleUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SalleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SalleDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Salle mutation op: %q", m.Op())
+	}
+}
+
+// SalleDisponibleClient is a client for the SalleDisponible schema.
+type SalleDisponibleClient struct {
+	config
+}
+
+// NewSalleDisponibleClient returns a client for the SalleDisponible from the given config.
+func NewSalleDisponibleClient(c config) *SalleDisponibleClient {
+	return &SalleDisponibleClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `salledisponible.Hooks(f(g(h())))`.
+func (c *SalleDisponibleClient) Use(hooks ...Hook) {
+	c.hooks.SalleDisponible = append(c.hooks.SalleDisponible, hooks...)
+}
+
+// Use adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `salledisponible.Intercept(f(g(h())))`.
+func (c *SalleDisponibleClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SalleDisponible = append(c.inters.SalleDisponible, interceptors...)
+}
+
+// Create returns a builder for creating a SalleDisponible entity.
+func (c *SalleDisponibleClient) Create() *SalleDisponibleCreate {
+	mutation := newSalleDisponibleMutation(c.config, OpCreate)
+	return &SalleDisponibleCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of SalleDisponible entities.
+func (c *SalleDisponibleClient) CreateBulk(builders ...*SalleDisponibleCreate) *SalleDisponibleCreateBulk {
+	return &SalleDisponibleCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for SalleDisponible.
+func (c *SalleDisponibleClient) Update() *SalleDisponibleUpdate {
+	mutation := newSalleDisponibleMutation(c.config, OpUpdate)
+	return &SalleDisponibleUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SalleDisponibleClient) UpdateOne(sd *SalleDisponible) *SalleDisponibleUpdateOne {
+	mutation := newSalleDisponibleMutation(c.config, OpUpdateOne, withSalleDisponible(sd))
+	return &SalleDisponibleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SalleDisponibleClient) UpdateOneID(id int) *SalleDisponibleUpdateOne {
+	mutation := newSalleDisponibleMutation(c.config, OpUpdateOne, withSalleDisponibleID(id))
+	return &SalleDisponibleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for SalleDisponible.
+func (c *SalleDisponibleClient) Delete() *SalleDisponibleDelete {
+	mutation := newSalleDisponibleMutation(c.config, OpDelete)
+	return &SalleDisponibleDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SalleDisponibleClient) DeleteOne(sd *SalleDisponible) *SalleDisponibleDeleteOne {
+	return c.DeleteOneID(sd.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SalleDisponibleClient) DeleteOneID(id int) *SalleDisponibleDeleteOne {
+	builder := c.Delete().Where(salledisponible.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SalleDisponibleDeleteOne{builder}
+}
+
+// Query returns a query builder for SalleDisponible.
+func (c *SalleDisponibleClient) Query() *SalleDisponibleQuery {
+	return &SalleDisponibleQuery{
+		config: c.config,
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a SalleDisponible entity by its id.
+func (c *SalleDisponibleClient) Get(ctx context.Context, id int) (*SalleDisponible, error) {
+	return c.Query().Where(salledisponible.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SalleDisponibleClient) GetX(ctx context.Context, id int) *SalleDisponible {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QuerySalle queries the salle edge of a SalleDisponible.
+func (c *SalleDisponibleClient) QuerySalle(sd *SalleDisponible) *SalleQuery {
+	query := (&SalleClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := sd.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(salledisponible.Table, salledisponible.FieldID, id),
+			sqlgraph.To(salle.Table, salle.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, salledisponible.SalleTable, salledisponible.SalleColumn),
+		)
+		fromV = sqlgraph.Neighbors(sd.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *SalleDisponibleClient) Hooks() []Hook {
+	return c.hooks.SalleDisponible
+}
+
+// Interceptors returns the client interceptors.
+func (c *SalleDisponibleClient) Interceptors() []Interceptor {
+	return c.inters.SalleDisponible
+}
+
+func (c *SalleDisponibleClient) mutate(ctx context.Context, m *SalleDisponibleMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SalleDisponibleCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SalleDisponibleUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SalleDisponibleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SalleDisponibleDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown SalleDisponible mutation op: %q", m.Op())
 	}
 }

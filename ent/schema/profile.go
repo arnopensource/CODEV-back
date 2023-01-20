@@ -2,9 +2,8 @@ package schema
 
 import (
 	"entgo.io/ent"
-	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/edge"
-	"entgo.io/ent/schema/Prof"
+	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 )
 
@@ -26,8 +25,7 @@ func (Profile) Fields() []ent.Field {
 // Edges of the Profile.
 func (Profile) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("id_prof", Prof.type),
-		edge.To("id_networking", Networking.type),
-		edge.To("id_reservation", Reservation.type
+		edge.To("friends", Profile.Type).Through("networking", Networking.Type),
+		edge.To("salle_reservee", Salle.Type).Through("reservations", Reservation.Type),
 	}
 }

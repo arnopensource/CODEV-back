@@ -8,24 +8,39 @@ import (
 )
 
 var (
-	// BookingsColumns holds the columns for the "bookings" table.
-	BookingsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "name", Type: field.TypeString},
-		{Name: "start", Type: field.TypeTime},
-		{Name: "end", Type: field.TypeTime},
+	// NetworkingsColumns holds the columns for the "networkings" table.
+	NetworkingsColumns = []*schema.Column{
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "accepted", Type: field.TypeBool},
+		{Name: "profile_id", Type: field.TypeUUID},
+		{Name: "friend_id", Type: field.TypeUUID},
 	}
-	// BookingsTable holds the schema information for the "bookings" table.
-	BookingsTable = &schema.Table{
-		Name:       "bookings",
-		Columns:    BookingsColumns,
-		PrimaryKey: []*schema.Column{BookingsColumns[0]},
+	// NetworkingsTable holds the schema information for the "networkings" table.
+	NetworkingsTable = &schema.Table{
+		Name:       "networkings",
+		Columns:    NetworkingsColumns,
+		PrimaryKey: []*schema.Column{NetworkingsColumns[2], NetworkingsColumns[3]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "networkings_profiles_profile",
+				Columns:    []*schema.Column{NetworkingsColumns[2]},
+				RefColumns: []*schema.Column{ProfilesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "networkings_profiles_friend",
+				Columns:    []*schema.Column{NetworkingsColumns[3]},
+				RefColumns: []*schema.Column{ProfilesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
 	}
 	// ProfilesColumns holds the columns for the "profiles" table.
 	ProfilesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "firstname", Type: field.TypeString},
 		{Name: "lastname", Type: field.TypeString},
+		{Name: "telephone", Type: field.TypeString},
 	}
 	// ProfilesTable holds the schema information for the "profiles" table.
 	ProfilesTable = &schema.Table{
@@ -33,12 +48,86 @@ var (
 		Columns:    ProfilesColumns,
 		PrimaryKey: []*schema.Column{ProfilesColumns[0]},
 	}
+	// ReservationsColumns holds the columns for the "reservations" table.
+	ReservationsColumns = []*schema.Column{
+		{Name: "quantity_students", Type: field.TypeInt},
+		{Name: "horaire_res_initial", Type: field.TypeTime},
+		{Name: "horaire_res_final", Type: field.TypeTime},
+		{Name: "horaire_act", Type: field.TypeTime},
+		{Name: "profile_id", Type: field.TypeUUID},
+		{Name: "salle_id", Type: field.TypeInt},
+	}
+	// ReservationsTable holds the schema information for the "reservations" table.
+	ReservationsTable = &schema.Table{
+		Name:       "reservations",
+		Columns:    ReservationsColumns,
+		PrimaryKey: []*schema.Column{ReservationsColumns[4], ReservationsColumns[5]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "reservations_profiles_profile",
+				Columns:    []*schema.Column{ReservationsColumns[4]},
+				RefColumns: []*schema.Column{ProfilesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "reservations_salles_salle",
+				Columns:    []*schema.Column{ReservationsColumns[5]},
+				RefColumns: []*schema.Column{SallesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// SallesColumns holds the columns for the "salles" table.
+	SallesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "nom", Type: field.TypeString},
+		{Name: "batiment", Type: field.TypeString},
+		{Name: "etage", Type: field.TypeString},
+		{Name: "num_salle", Type: field.TypeString},
+		{Name: "cap_max", Type: field.TypeInt},
+	}
+	// SallesTable holds the schema information for the "salles" table.
+	SallesTable = &schema.Table{
+		Name:       "salles",
+		Columns:    SallesColumns,
+		PrimaryKey: []*schema.Column{SallesColumns[0]},
+	}
+	// SalleDisponiblesColumns holds the columns for the "salle_disponibles" table.
+	SalleDisponiblesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "id_salle", Type: field.TypeString},
+		{Name: "start", Type: field.TypeTime},
+		{Name: "end", Type: field.TypeTime},
+		{Name: "salle_disponibilite", Type: field.TypeInt, Nullable: true},
+	}
+	// SalleDisponiblesTable holds the schema information for the "salle_disponibles" table.
+	SalleDisponiblesTable = &schema.Table{
+		Name:       "salle_disponibles",
+		Columns:    SalleDisponiblesColumns,
+		PrimaryKey: []*schema.Column{SalleDisponiblesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "salle_disponibles_salles_disponibilite",
+				Columns:    []*schema.Column{SalleDisponiblesColumns[4]},
+				RefColumns: []*schema.Column{SallesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
-		BookingsTable,
+		NetworkingsTable,
 		ProfilesTable,
+		ReservationsTable,
+		SallesTable,
+		SalleDisponiblesTable,
 	}
 )
 
 func init() {
+	NetworkingsTable.ForeignKeys[0].RefTable = ProfilesTable
+	NetworkingsTable.ForeignKeys[1].RefTable = ProfilesTable
+	ReservationsTable.ForeignKeys[0].RefTable = ProfilesTable
+	ReservationsTable.ForeignKeys[1].RefTable = SallesTable
+	SalleDisponiblesTable.ForeignKeys[0].RefTable = SallesTable
 }

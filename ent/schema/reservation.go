@@ -1,16 +1,30 @@
 package schema
 
-import "entgo.io/ent"
+import (
+	"entgo.io/ent"
+	"entgo.io/ent/schema"
+	"entgo.io/ent/schema/edge"
+	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
+)
 
 // Reservation holds the schema definition for the Reservation entity.
 type Reservation struct {
 	ent.Schema
 }
 
+func (Reservation) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		field.ID("profile_id", "salle_id"),
+	}
+}
+
 // Fields of the Reservation.
 func (Reservation) Fields() []ent.Field {
 	return []ent.Field{
-		field.Integer("quantity_students"),
+		field.UUID("profile_id", uuid.New()),
+		field.Int("salle_id"),
+		field.Int("quantity_students"),
 		field.Time("horaire_res_initial"),
 		field.Time("horaire_res_final"),
 		field.Time("horaire_act"),
@@ -20,16 +34,13 @@ func (Reservation) Fields() []ent.Field {
 // Edges of the Reservation.
 func (Reservation) Edges() []ent.Edge {
 	return []ent.Edge{
-		// Create an inverse-edge called "owner" of type `User`
-		// and reference it to the "cars" edge (in User schema)
-		// explicitly using the `Ref` method.
-		edge.From("id", Profile.Type).
-			Ref("id_reservation").
-			// setting the edge to unique, ensure
-			// that a car can have only one owner.
-			Unique(),
-		edge.From("id", Salle.Type).
-			Ref("id_salle").
-			Unique(),
+		edge.To("profile", Profile.Type).
+			Required().
+			Unique().
+			Field("profile_id"),
+		edge.To("salle", Salle.Type).
+			Required().
+			Unique().
+			Field("salle_id"),
 	}
 }
