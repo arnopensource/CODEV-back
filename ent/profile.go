@@ -20,8 +20,8 @@ type Profile struct {
 	Firstname string `json:"firstname,omitempty"`
 	// Lastname holds the value of the "lastname" field.
 	Lastname string `json:"lastname,omitempty"`
-	// Telephone holds the value of the "telephone" field.
-	Telephone string `json:"telephone,omitempty"`
+	// Phone holds the value of the "phone" field.
+	Phone string `json:"phone,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ProfileQuery when eager-loading is set.
 	Edges ProfileEdges `json:"edges"`
@@ -31,12 +31,12 @@ type Profile struct {
 type ProfileEdges struct {
 	// Friends holds the value of the friends edge.
 	Friends []*Profile `json:"friends,omitempty"`
-	// SalleReservee holds the value of the salle_reservee edge.
-	SalleReservee []*Salle `json:"salle_reservee,omitempty"`
-	// Networking holds the value of the networking edge.
-	Networking []*Networking `json:"networking,omitempty"`
-	// Reservations holds the value of the reservations edge.
-	Reservations []*Reservation `json:"reservations,omitempty"`
+	// Bookings holds the value of the bookings edge.
+	Bookings []*Room `json:"bookings,omitempty"`
+	// FriendsData holds the value of the friends_data edge.
+	FriendsData []*Friend `json:"friends_data,omitempty"`
+	// BookingsData holds the value of the bookings_data edge.
+	BookingsData []*Booking `json:"bookings_data,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [4]bool
@@ -51,31 +51,31 @@ func (e ProfileEdges) FriendsOrErr() ([]*Profile, error) {
 	return nil, &NotLoadedError{edge: "friends"}
 }
 
-// SalleReserveeOrErr returns the SalleReservee value or an error if the edge
+// BookingsOrErr returns the Bookings value or an error if the edge
 // was not loaded in eager-loading.
-func (e ProfileEdges) SalleReserveeOrErr() ([]*Salle, error) {
+func (e ProfileEdges) BookingsOrErr() ([]*Room, error) {
 	if e.loadedTypes[1] {
-		return e.SalleReservee, nil
+		return e.Bookings, nil
 	}
-	return nil, &NotLoadedError{edge: "salle_reservee"}
+	return nil, &NotLoadedError{edge: "bookings"}
 }
 
-// NetworkingOrErr returns the Networking value or an error if the edge
+// FriendsDataOrErr returns the FriendsData value or an error if the edge
 // was not loaded in eager-loading.
-func (e ProfileEdges) NetworkingOrErr() ([]*Networking, error) {
+func (e ProfileEdges) FriendsDataOrErr() ([]*Friend, error) {
 	if e.loadedTypes[2] {
-		return e.Networking, nil
+		return e.FriendsData, nil
 	}
-	return nil, &NotLoadedError{edge: "networking"}
+	return nil, &NotLoadedError{edge: "friends_data"}
 }
 
-// ReservationsOrErr returns the Reservations value or an error if the edge
+// BookingsDataOrErr returns the BookingsData value or an error if the edge
 // was not loaded in eager-loading.
-func (e ProfileEdges) ReservationsOrErr() ([]*Reservation, error) {
+func (e ProfileEdges) BookingsDataOrErr() ([]*Booking, error) {
 	if e.loadedTypes[3] {
-		return e.Reservations, nil
+		return e.BookingsData, nil
 	}
-	return nil, &NotLoadedError{edge: "reservations"}
+	return nil, &NotLoadedError{edge: "bookings_data"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -83,7 +83,7 @@ func (*Profile) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case profile.FieldFirstname, profile.FieldLastname, profile.FieldTelephone:
+		case profile.FieldFirstname, profile.FieldLastname, profile.FieldPhone:
 			values[i] = new(sql.NullString)
 		case profile.FieldID:
 			values[i] = new(uuid.UUID)
@@ -120,11 +120,11 @@ func (pr *Profile) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				pr.Lastname = value.String
 			}
-		case profile.FieldTelephone:
+		case profile.FieldPhone:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field telephone", values[i])
+				return fmt.Errorf("unexpected type %T for field phone", values[i])
 			} else if value.Valid {
-				pr.Telephone = value.String
+				pr.Phone = value.String
 			}
 		}
 	}
@@ -136,19 +136,19 @@ func (pr *Profile) QueryFriends() *ProfileQuery {
 	return (&ProfileClient{config: pr.config}).QueryFriends(pr)
 }
 
-// QuerySalleReservee queries the "salle_reservee" edge of the Profile entity.
-func (pr *Profile) QuerySalleReservee() *SalleQuery {
-	return (&ProfileClient{config: pr.config}).QuerySalleReservee(pr)
+// QueryBookings queries the "bookings" edge of the Profile entity.
+func (pr *Profile) QueryBookings() *RoomQuery {
+	return (&ProfileClient{config: pr.config}).QueryBookings(pr)
 }
 
-// QueryNetworking queries the "networking" edge of the Profile entity.
-func (pr *Profile) QueryNetworking() *NetworkingQuery {
-	return (&ProfileClient{config: pr.config}).QueryNetworking(pr)
+// QueryFriendsData queries the "friends_data" edge of the Profile entity.
+func (pr *Profile) QueryFriendsData() *FriendQuery {
+	return (&ProfileClient{config: pr.config}).QueryFriendsData(pr)
 }
 
-// QueryReservations queries the "reservations" edge of the Profile entity.
-func (pr *Profile) QueryReservations() *ReservationQuery {
-	return (&ProfileClient{config: pr.config}).QueryReservations(pr)
+// QueryBookingsData queries the "bookings_data" edge of the Profile entity.
+func (pr *Profile) QueryBookingsData() *BookingQuery {
+	return (&ProfileClient{config: pr.config}).QueryBookingsData(pr)
 }
 
 // Update returns a builder for updating this Profile.
@@ -180,8 +180,8 @@ func (pr *Profile) String() string {
 	builder.WriteString("lastname=")
 	builder.WriteString(pr.Lastname)
 	builder.WriteString(", ")
-	builder.WriteString("telephone=")
-	builder.WriteString(pr.Telephone)
+	builder.WriteString("phone=")
+	builder.WriteString(pr.Phone)
 	builder.WriteByte(')')
 	return builder.String()
 }

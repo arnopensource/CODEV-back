@@ -64,9 +64,9 @@ func Lastname(v string) predicate.Profile {
 	return predicate.Profile(sql.FieldEQ(FieldLastname, v))
 }
 
-// Telephone applies equality check predicate on the "telephone" field. It's identical to TelephoneEQ.
-func Telephone(v string) predicate.Profile {
-	return predicate.Profile(sql.FieldEQ(FieldTelephone, v))
+// Phone applies equality check predicate on the "phone" field. It's identical to PhoneEQ.
+func Phone(v string) predicate.Profile {
+	return predicate.Profile(sql.FieldEQ(FieldPhone, v))
 }
 
 // FirstnameEQ applies the EQ predicate on the "firstname" field.
@@ -199,69 +199,69 @@ func LastnameContainsFold(v string) predicate.Profile {
 	return predicate.Profile(sql.FieldContainsFold(FieldLastname, v))
 }
 
-// TelephoneEQ applies the EQ predicate on the "telephone" field.
-func TelephoneEQ(v string) predicate.Profile {
-	return predicate.Profile(sql.FieldEQ(FieldTelephone, v))
+// PhoneEQ applies the EQ predicate on the "phone" field.
+func PhoneEQ(v string) predicate.Profile {
+	return predicate.Profile(sql.FieldEQ(FieldPhone, v))
 }
 
-// TelephoneNEQ applies the NEQ predicate on the "telephone" field.
-func TelephoneNEQ(v string) predicate.Profile {
-	return predicate.Profile(sql.FieldNEQ(FieldTelephone, v))
+// PhoneNEQ applies the NEQ predicate on the "phone" field.
+func PhoneNEQ(v string) predicate.Profile {
+	return predicate.Profile(sql.FieldNEQ(FieldPhone, v))
 }
 
-// TelephoneIn applies the In predicate on the "telephone" field.
-func TelephoneIn(vs ...string) predicate.Profile {
-	return predicate.Profile(sql.FieldIn(FieldTelephone, vs...))
+// PhoneIn applies the In predicate on the "phone" field.
+func PhoneIn(vs ...string) predicate.Profile {
+	return predicate.Profile(sql.FieldIn(FieldPhone, vs...))
 }
 
-// TelephoneNotIn applies the NotIn predicate on the "telephone" field.
-func TelephoneNotIn(vs ...string) predicate.Profile {
-	return predicate.Profile(sql.FieldNotIn(FieldTelephone, vs...))
+// PhoneNotIn applies the NotIn predicate on the "phone" field.
+func PhoneNotIn(vs ...string) predicate.Profile {
+	return predicate.Profile(sql.FieldNotIn(FieldPhone, vs...))
 }
 
-// TelephoneGT applies the GT predicate on the "telephone" field.
-func TelephoneGT(v string) predicate.Profile {
-	return predicate.Profile(sql.FieldGT(FieldTelephone, v))
+// PhoneGT applies the GT predicate on the "phone" field.
+func PhoneGT(v string) predicate.Profile {
+	return predicate.Profile(sql.FieldGT(FieldPhone, v))
 }
 
-// TelephoneGTE applies the GTE predicate on the "telephone" field.
-func TelephoneGTE(v string) predicate.Profile {
-	return predicate.Profile(sql.FieldGTE(FieldTelephone, v))
+// PhoneGTE applies the GTE predicate on the "phone" field.
+func PhoneGTE(v string) predicate.Profile {
+	return predicate.Profile(sql.FieldGTE(FieldPhone, v))
 }
 
-// TelephoneLT applies the LT predicate on the "telephone" field.
-func TelephoneLT(v string) predicate.Profile {
-	return predicate.Profile(sql.FieldLT(FieldTelephone, v))
+// PhoneLT applies the LT predicate on the "phone" field.
+func PhoneLT(v string) predicate.Profile {
+	return predicate.Profile(sql.FieldLT(FieldPhone, v))
 }
 
-// TelephoneLTE applies the LTE predicate on the "telephone" field.
-func TelephoneLTE(v string) predicate.Profile {
-	return predicate.Profile(sql.FieldLTE(FieldTelephone, v))
+// PhoneLTE applies the LTE predicate on the "phone" field.
+func PhoneLTE(v string) predicate.Profile {
+	return predicate.Profile(sql.FieldLTE(FieldPhone, v))
 }
 
-// TelephoneContains applies the Contains predicate on the "telephone" field.
-func TelephoneContains(v string) predicate.Profile {
-	return predicate.Profile(sql.FieldContains(FieldTelephone, v))
+// PhoneContains applies the Contains predicate on the "phone" field.
+func PhoneContains(v string) predicate.Profile {
+	return predicate.Profile(sql.FieldContains(FieldPhone, v))
 }
 
-// TelephoneHasPrefix applies the HasPrefix predicate on the "telephone" field.
-func TelephoneHasPrefix(v string) predicate.Profile {
-	return predicate.Profile(sql.FieldHasPrefix(FieldTelephone, v))
+// PhoneHasPrefix applies the HasPrefix predicate on the "phone" field.
+func PhoneHasPrefix(v string) predicate.Profile {
+	return predicate.Profile(sql.FieldHasPrefix(FieldPhone, v))
 }
 
-// TelephoneHasSuffix applies the HasSuffix predicate on the "telephone" field.
-func TelephoneHasSuffix(v string) predicate.Profile {
-	return predicate.Profile(sql.FieldHasSuffix(FieldTelephone, v))
+// PhoneHasSuffix applies the HasSuffix predicate on the "phone" field.
+func PhoneHasSuffix(v string) predicate.Profile {
+	return predicate.Profile(sql.FieldHasSuffix(FieldPhone, v))
 }
 
-// TelephoneEqualFold applies the EqualFold predicate on the "telephone" field.
-func TelephoneEqualFold(v string) predicate.Profile {
-	return predicate.Profile(sql.FieldEqualFold(FieldTelephone, v))
+// PhoneEqualFold applies the EqualFold predicate on the "phone" field.
+func PhoneEqualFold(v string) predicate.Profile {
+	return predicate.Profile(sql.FieldEqualFold(FieldPhone, v))
 }
 
-// TelephoneContainsFold applies the ContainsFold predicate on the "telephone" field.
-func TelephoneContainsFold(v string) predicate.Profile {
-	return predicate.Profile(sql.FieldContainsFold(FieldTelephone, v))
+// PhoneContainsFold applies the ContainsFold predicate on the "phone" field.
+func PhoneContainsFold(v string) predicate.Profile {
+	return predicate.Profile(sql.FieldContainsFold(FieldPhone, v))
 }
 
 // HasFriends applies the HasEdge predicate on the "friends" edge.
@@ -291,24 +291,24 @@ func HasFriendsWith(preds ...predicate.Profile) predicate.Profile {
 	})
 }
 
-// HasSalleReservee applies the HasEdge predicate on the "salle_reservee" edge.
-func HasSalleReservee() predicate.Profile {
+// HasBookings applies the HasEdge predicate on the "bookings" edge.
+func HasBookings() predicate.Profile {
 	return predicate.Profile(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, SalleReserveeTable, SalleReserveePrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2M, false, BookingsTable, BookingsPrimaryKey...),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasSalleReserveeWith applies the HasEdge predicate on the "salle_reservee" edge with a given conditions (other predicates).
-func HasSalleReserveeWith(preds ...predicate.Salle) predicate.Profile {
+// HasBookingsWith applies the HasEdge predicate on the "bookings" edge with a given conditions (other predicates).
+func HasBookingsWith(preds ...predicate.Room) predicate.Profile {
 	return predicate.Profile(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(SalleReserveeInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, SalleReserveeTable, SalleReserveePrimaryKey...),
+			sqlgraph.To(BookingsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, BookingsTable, BookingsPrimaryKey...),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
@@ -318,24 +318,24 @@ func HasSalleReserveeWith(preds ...predicate.Salle) predicate.Profile {
 	})
 }
 
-// HasNetworking applies the HasEdge predicate on the "networking" edge.
-func HasNetworking() predicate.Profile {
+// HasFriendsData applies the HasEdge predicate on the "friends_data" edge.
+func HasFriendsData() predicate.Profile {
 	return predicate.Profile(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, NetworkingTable, NetworkingColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, FriendsDataTable, FriendsDataColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasNetworkingWith applies the HasEdge predicate on the "networking" edge with a given conditions (other predicates).
-func HasNetworkingWith(preds ...predicate.Networking) predicate.Profile {
+// HasFriendsDataWith applies the HasEdge predicate on the "friends_data" edge with a given conditions (other predicates).
+func HasFriendsDataWith(preds ...predicate.Friend) predicate.Profile {
 	return predicate.Profile(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(NetworkingInverseTable, NetworkingColumn),
-			sqlgraph.Edge(sqlgraph.O2M, true, NetworkingTable, NetworkingColumn),
+			sqlgraph.To(FriendsDataInverseTable, FriendsDataColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, FriendsDataTable, FriendsDataColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
@@ -345,24 +345,24 @@ func HasNetworkingWith(preds ...predicate.Networking) predicate.Profile {
 	})
 }
 
-// HasReservations applies the HasEdge predicate on the "reservations" edge.
-func HasReservations() predicate.Profile {
+// HasBookingsData applies the HasEdge predicate on the "bookings_data" edge.
+func HasBookingsData() predicate.Profile {
 	return predicate.Profile(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, ReservationsTable, ReservationsColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, BookingsDataTable, BookingsDataColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasReservationsWith applies the HasEdge predicate on the "reservations" edge with a given conditions (other predicates).
-func HasReservationsWith(preds ...predicate.Reservation) predicate.Profile {
+// HasBookingsDataWith applies the HasEdge predicate on the "bookings_data" edge with a given conditions (other predicates).
+func HasBookingsDataWith(preds ...predicate.Booking) predicate.Profile {
 	return predicate.Profile(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(ReservationsInverseTable, ReservationsColumn),
-			sqlgraph.Edge(sqlgraph.O2M, true, ReservationsTable, ReservationsColumn),
+			sqlgraph.To(BookingsDataInverseTable, BookingsDataColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, BookingsDataTable, BookingsDataColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

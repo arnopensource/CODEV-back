@@ -9,16 +9,40 @@ import (
 	"github.com/abc3354/CODEV-back/ent"
 )
 
-// The NetworkingFunc type is an adapter to allow the use of ordinary
-// function as Networking mutator.
-type NetworkingFunc func(context.Context, *ent.NetworkingMutation) (ent.Value, error)
+// The AvailableRoomFunc type is an adapter to allow the use of ordinary
+// function as AvailableRoom mutator.
+type AvailableRoomFunc func(context.Context, *ent.AvailableRoomMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
-func (f NetworkingFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.NetworkingMutation); ok {
+func (f AvailableRoomFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AvailableRoomMutation); ok {
 		return f(ctx, mv)
 	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.NetworkingMutation", m)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AvailableRoomMutation", m)
+}
+
+// The BookingFunc type is an adapter to allow the use of ordinary
+// function as Booking mutator.
+type BookingFunc func(context.Context, *ent.BookingMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f BookingFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.BookingMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BookingMutation", m)
+}
+
+// The FriendFunc type is an adapter to allow the use of ordinary
+// function as Friend mutator.
+type FriendFunc func(context.Context, *ent.FriendMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f FriendFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.FriendMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.FriendMutation", m)
 }
 
 // The ProfileFunc type is an adapter to allow the use of ordinary
@@ -33,40 +57,16 @@ func (f ProfileFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProfileMutation", m)
 }
 
-// The ReservationFunc type is an adapter to allow the use of ordinary
-// function as Reservation mutator.
-type ReservationFunc func(context.Context, *ent.ReservationMutation) (ent.Value, error)
+// The RoomFunc type is an adapter to allow the use of ordinary
+// function as Room mutator.
+type RoomFunc func(context.Context, *ent.RoomMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
-func (f ReservationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.ReservationMutation); ok {
+func (f RoomFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.RoomMutation); ok {
 		return f(ctx, mv)
 	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ReservationMutation", m)
-}
-
-// The SalleFunc type is an adapter to allow the use of ordinary
-// function as Salle mutator.
-type SalleFunc func(context.Context, *ent.SalleMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f SalleFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.SalleMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SalleMutation", m)
-}
-
-// The SalleDisponibleFunc type is an adapter to allow the use of ordinary
-// function as SalleDisponible mutator.
-type SalleDisponibleFunc func(context.Context, *ent.SalleDisponibleMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f SalleDisponibleFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.SalleDisponibleMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SalleDisponibleMutation", m)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RoomMutation", m)
 }
 
 // Condition is a hook condition function.

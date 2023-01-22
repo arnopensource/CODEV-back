@@ -12,7 +12,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/abc3354/CODEV-back/ent/predicate"
 	"github.com/abc3354/CODEV-back/ent/profile"
-	"github.com/abc3354/CODEV-back/ent/salle"
+	"github.com/abc3354/CODEV-back/ent/room"
 	"github.com/google/uuid"
 )
 
@@ -41,9 +41,9 @@ func (pu *ProfileUpdate) SetLastname(s string) *ProfileUpdate {
 	return pu
 }
 
-// SetTelephone sets the "telephone" field.
-func (pu *ProfileUpdate) SetTelephone(s string) *ProfileUpdate {
-	pu.mutation.SetTelephone(s)
+// SetPhone sets the "phone" field.
+func (pu *ProfileUpdate) SetPhone(s string) *ProfileUpdate {
+	pu.mutation.SetPhone(s)
 	return pu
 }
 
@@ -62,19 +62,19 @@ func (pu *ProfileUpdate) AddFriends(p ...*Profile) *ProfileUpdate {
 	return pu.AddFriendIDs(ids...)
 }
 
-// AddSalleReserveeIDs adds the "salle_reservee" edge to the Salle entity by IDs.
-func (pu *ProfileUpdate) AddSalleReserveeIDs(ids ...int) *ProfileUpdate {
-	pu.mutation.AddSalleReserveeIDs(ids...)
+// AddBookingIDs adds the "bookings" edge to the Room entity by IDs.
+func (pu *ProfileUpdate) AddBookingIDs(ids ...int) *ProfileUpdate {
+	pu.mutation.AddBookingIDs(ids...)
 	return pu
 }
 
-// AddSalleReservee adds the "salle_reservee" edges to the Salle entity.
-func (pu *ProfileUpdate) AddSalleReservee(s ...*Salle) *ProfileUpdate {
-	ids := make([]int, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+// AddBookings adds the "bookings" edges to the Room entity.
+func (pu *ProfileUpdate) AddBookings(r ...*Room) *ProfileUpdate {
+	ids := make([]int, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
 	}
-	return pu.AddSalleReserveeIDs(ids...)
+	return pu.AddBookingIDs(ids...)
 }
 
 // Mutation returns the ProfileMutation object of the builder.
@@ -103,25 +103,25 @@ func (pu *ProfileUpdate) RemoveFriends(p ...*Profile) *ProfileUpdate {
 	return pu.RemoveFriendIDs(ids...)
 }
 
-// ClearSalleReservee clears all "salle_reservee" edges to the Salle entity.
-func (pu *ProfileUpdate) ClearSalleReservee() *ProfileUpdate {
-	pu.mutation.ClearSalleReservee()
+// ClearBookings clears all "bookings" edges to the Room entity.
+func (pu *ProfileUpdate) ClearBookings() *ProfileUpdate {
+	pu.mutation.ClearBookings()
 	return pu
 }
 
-// RemoveSalleReserveeIDs removes the "salle_reservee" edge to Salle entities by IDs.
-func (pu *ProfileUpdate) RemoveSalleReserveeIDs(ids ...int) *ProfileUpdate {
-	pu.mutation.RemoveSalleReserveeIDs(ids...)
+// RemoveBookingIDs removes the "bookings" edge to Room entities by IDs.
+func (pu *ProfileUpdate) RemoveBookingIDs(ids ...int) *ProfileUpdate {
+	pu.mutation.RemoveBookingIDs(ids...)
 	return pu
 }
 
-// RemoveSalleReservee removes "salle_reservee" edges to Salle entities.
-func (pu *ProfileUpdate) RemoveSalleReservee(s ...*Salle) *ProfileUpdate {
-	ids := make([]int, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+// RemoveBookings removes "bookings" edges to Room entities.
+func (pu *ProfileUpdate) RemoveBookings(r ...*Room) *ProfileUpdate {
+	ids := make([]int, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
 	}
-	return pu.RemoveSalleReserveeIDs(ids...)
+	return pu.RemoveBookingIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -175,8 +175,8 @@ func (pu *ProfileUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := pu.mutation.Lastname(); ok {
 		_spec.SetField(profile.FieldLastname, field.TypeString, value)
 	}
-	if value, ok := pu.mutation.Telephone(); ok {
-		_spec.SetField(profile.FieldTelephone, field.TypeString, value)
+	if value, ok := pu.mutation.Phone(); ok {
+		_spec.SetField(profile.FieldPhone, field.TypeString, value)
 	}
 	if pu.mutation.FriendsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -232,33 +232,33 @@ func (pu *ProfileUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if pu.mutation.SalleReserveeCleared() {
+	if pu.mutation.BookingsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   profile.SalleReserveeTable,
-			Columns: profile.SalleReserveePrimaryKey,
+			Table:   profile.BookingsTable,
+			Columns: profile.BookingsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: salle.FieldID,
+					Column: room.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := pu.mutation.RemovedSalleReserveeIDs(); len(nodes) > 0 && !pu.mutation.SalleReserveeCleared() {
+	if nodes := pu.mutation.RemovedBookingsIDs(); len(nodes) > 0 && !pu.mutation.BookingsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   profile.SalleReserveeTable,
-			Columns: profile.SalleReserveePrimaryKey,
+			Table:   profile.BookingsTable,
+			Columns: profile.BookingsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: salle.FieldID,
+					Column: room.FieldID,
 				},
 			},
 		}
@@ -267,17 +267,17 @@ func (pu *ProfileUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := pu.mutation.SalleReserveeIDs(); len(nodes) > 0 {
+	if nodes := pu.mutation.BookingsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   profile.SalleReserveeTable,
-			Columns: profile.SalleReserveePrimaryKey,
+			Table:   profile.BookingsTable,
+			Columns: profile.BookingsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: salle.FieldID,
+					Column: room.FieldID,
 				},
 			},
 		}
@@ -318,9 +318,9 @@ func (puo *ProfileUpdateOne) SetLastname(s string) *ProfileUpdateOne {
 	return puo
 }
 
-// SetTelephone sets the "telephone" field.
-func (puo *ProfileUpdateOne) SetTelephone(s string) *ProfileUpdateOne {
-	puo.mutation.SetTelephone(s)
+// SetPhone sets the "phone" field.
+func (puo *ProfileUpdateOne) SetPhone(s string) *ProfileUpdateOne {
+	puo.mutation.SetPhone(s)
 	return puo
 }
 
@@ -339,19 +339,19 @@ func (puo *ProfileUpdateOne) AddFriends(p ...*Profile) *ProfileUpdateOne {
 	return puo.AddFriendIDs(ids...)
 }
 
-// AddSalleReserveeIDs adds the "salle_reservee" edge to the Salle entity by IDs.
-func (puo *ProfileUpdateOne) AddSalleReserveeIDs(ids ...int) *ProfileUpdateOne {
-	puo.mutation.AddSalleReserveeIDs(ids...)
+// AddBookingIDs adds the "bookings" edge to the Room entity by IDs.
+func (puo *ProfileUpdateOne) AddBookingIDs(ids ...int) *ProfileUpdateOne {
+	puo.mutation.AddBookingIDs(ids...)
 	return puo
 }
 
-// AddSalleReservee adds the "salle_reservee" edges to the Salle entity.
-func (puo *ProfileUpdateOne) AddSalleReservee(s ...*Salle) *ProfileUpdateOne {
-	ids := make([]int, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+// AddBookings adds the "bookings" edges to the Room entity.
+func (puo *ProfileUpdateOne) AddBookings(r ...*Room) *ProfileUpdateOne {
+	ids := make([]int, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
 	}
-	return puo.AddSalleReserveeIDs(ids...)
+	return puo.AddBookingIDs(ids...)
 }
 
 // Mutation returns the ProfileMutation object of the builder.
@@ -380,25 +380,25 @@ func (puo *ProfileUpdateOne) RemoveFriends(p ...*Profile) *ProfileUpdateOne {
 	return puo.RemoveFriendIDs(ids...)
 }
 
-// ClearSalleReservee clears all "salle_reservee" edges to the Salle entity.
-func (puo *ProfileUpdateOne) ClearSalleReservee() *ProfileUpdateOne {
-	puo.mutation.ClearSalleReservee()
+// ClearBookings clears all "bookings" edges to the Room entity.
+func (puo *ProfileUpdateOne) ClearBookings() *ProfileUpdateOne {
+	puo.mutation.ClearBookings()
 	return puo
 }
 
-// RemoveSalleReserveeIDs removes the "salle_reservee" edge to Salle entities by IDs.
-func (puo *ProfileUpdateOne) RemoveSalleReserveeIDs(ids ...int) *ProfileUpdateOne {
-	puo.mutation.RemoveSalleReserveeIDs(ids...)
+// RemoveBookingIDs removes the "bookings" edge to Room entities by IDs.
+func (puo *ProfileUpdateOne) RemoveBookingIDs(ids ...int) *ProfileUpdateOne {
+	puo.mutation.RemoveBookingIDs(ids...)
 	return puo
 }
 
-// RemoveSalleReservee removes "salle_reservee" edges to Salle entities.
-func (puo *ProfileUpdateOne) RemoveSalleReservee(s ...*Salle) *ProfileUpdateOne {
-	ids := make([]int, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+// RemoveBookings removes "bookings" edges to Room entities.
+func (puo *ProfileUpdateOne) RemoveBookings(r ...*Room) *ProfileUpdateOne {
+	ids := make([]int, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
 	}
-	return puo.RemoveSalleReserveeIDs(ids...)
+	return puo.RemoveBookingIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -476,8 +476,8 @@ func (puo *ProfileUpdateOne) sqlSave(ctx context.Context) (_node *Profile, err e
 	if value, ok := puo.mutation.Lastname(); ok {
 		_spec.SetField(profile.FieldLastname, field.TypeString, value)
 	}
-	if value, ok := puo.mutation.Telephone(); ok {
-		_spec.SetField(profile.FieldTelephone, field.TypeString, value)
+	if value, ok := puo.mutation.Phone(); ok {
+		_spec.SetField(profile.FieldPhone, field.TypeString, value)
 	}
 	if puo.mutation.FriendsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -533,33 +533,33 @@ func (puo *ProfileUpdateOne) sqlSave(ctx context.Context) (_node *Profile, err e
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if puo.mutation.SalleReserveeCleared() {
+	if puo.mutation.BookingsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   profile.SalleReserveeTable,
-			Columns: profile.SalleReserveePrimaryKey,
+			Table:   profile.BookingsTable,
+			Columns: profile.BookingsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: salle.FieldID,
+					Column: room.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := puo.mutation.RemovedSalleReserveeIDs(); len(nodes) > 0 && !puo.mutation.SalleReserveeCleared() {
+	if nodes := puo.mutation.RemovedBookingsIDs(); len(nodes) > 0 && !puo.mutation.BookingsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   profile.SalleReserveeTable,
-			Columns: profile.SalleReserveePrimaryKey,
+			Table:   profile.BookingsTable,
+			Columns: profile.BookingsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: salle.FieldID,
+					Column: room.FieldID,
 				},
 			},
 		}
@@ -568,17 +568,17 @@ func (puo *ProfileUpdateOne) sqlSave(ctx context.Context) (_node *Profile, err e
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := puo.mutation.SalleReserveeIDs(); len(nodes) > 0 {
+	if nodes := puo.mutation.BookingsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   profile.SalleReserveeTable,
-			Columns: profile.SalleReserveePrimaryKey,
+			Table:   profile.BookingsTable,
+			Columns: profile.BookingsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: salle.FieldID,
+					Column: room.FieldID,
 				},
 			},
 		}

@@ -11,28 +11,28 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/abc3354/CODEV-back/ent/networking"
+	"github.com/abc3354/CODEV-back/ent/booking"
+	"github.com/abc3354/CODEV-back/ent/friend"
 	"github.com/abc3354/CODEV-back/ent/predicate"
 	"github.com/abc3354/CODEV-back/ent/profile"
-	"github.com/abc3354/CODEV-back/ent/reservation"
-	"github.com/abc3354/CODEV-back/ent/salle"
+	"github.com/abc3354/CODEV-back/ent/room"
 	"github.com/google/uuid"
 )
 
 // ProfileQuery is the builder for querying Profile entities.
 type ProfileQuery struct {
 	config
-	limit             *int
-	offset            *int
-	unique            *bool
-	order             []OrderFunc
-	fields            []string
-	inters            []Interceptor
-	predicates        []predicate.Profile
-	withFriends       *ProfileQuery
-	withSalleReservee *SalleQuery
-	withNetworking    *NetworkingQuery
-	withReservations  *ReservationQuery
+	limit            *int
+	offset           *int
+	unique           *bool
+	order            []OrderFunc
+	fields           []string
+	inters           []Interceptor
+	predicates       []predicate.Profile
+	withFriends      *ProfileQuery
+	withBookings     *RoomQuery
+	withFriendsData  *FriendQuery
+	withBookingsData *BookingQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -91,9 +91,9 @@ func (pq *ProfileQuery) QueryFriends() *ProfileQuery {
 	return query
 }
 
-// QuerySalleReservee chains the current query on the "salle_reservee" edge.
-func (pq *ProfileQuery) QuerySalleReservee() *SalleQuery {
-	query := (&SalleClient{config: pq.config}).Query()
+// QueryBookings chains the current query on the "bookings" edge.
+func (pq *ProfileQuery) QueryBookings() *RoomQuery {
+	query := (&RoomClient{config: pq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := pq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -104,8 +104,8 @@ func (pq *ProfileQuery) QuerySalleReservee() *SalleQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(profile.Table, profile.FieldID, selector),
-			sqlgraph.To(salle.Table, salle.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, profile.SalleReserveeTable, profile.SalleReserveePrimaryKey...),
+			sqlgraph.To(room.Table, room.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, profile.BookingsTable, profile.BookingsPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
 		return fromU, nil
@@ -113,9 +113,9 @@ func (pq *ProfileQuery) QuerySalleReservee() *SalleQuery {
 	return query
 }
 
-// QueryNetworking chains the current query on the "networking" edge.
-func (pq *ProfileQuery) QueryNetworking() *NetworkingQuery {
-	query := (&NetworkingClient{config: pq.config}).Query()
+// QueryFriendsData chains the current query on the "friends_data" edge.
+func (pq *ProfileQuery) QueryFriendsData() *FriendQuery {
+	query := (&FriendClient{config: pq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := pq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -126,8 +126,8 @@ func (pq *ProfileQuery) QueryNetworking() *NetworkingQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(profile.Table, profile.FieldID, selector),
-			sqlgraph.To(networking.Table, networking.ProfileColumn),
-			sqlgraph.Edge(sqlgraph.O2M, true, profile.NetworkingTable, profile.NetworkingColumn),
+			sqlgraph.To(friend.Table, friend.ProfileColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, profile.FriendsDataTable, profile.FriendsDataColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
 		return fromU, nil
@@ -135,9 +135,9 @@ func (pq *ProfileQuery) QueryNetworking() *NetworkingQuery {
 	return query
 }
 
-// QueryReservations chains the current query on the "reservations" edge.
-func (pq *ProfileQuery) QueryReservations() *ReservationQuery {
-	query := (&ReservationClient{config: pq.config}).Query()
+// QueryBookingsData chains the current query on the "bookings_data" edge.
+func (pq *ProfileQuery) QueryBookingsData() *BookingQuery {
+	query := (&BookingClient{config: pq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := pq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -148,8 +148,8 @@ func (pq *ProfileQuery) QueryReservations() *ReservationQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(profile.Table, profile.FieldID, selector),
-			sqlgraph.To(reservation.Table, reservation.ProfileColumn),
-			sqlgraph.Edge(sqlgraph.O2M, true, profile.ReservationsTable, profile.ReservationsColumn),
+			sqlgraph.To(booking.Table, booking.ProfileColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, profile.BookingsDataTable, profile.BookingsDataColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
 		return fromU, nil
@@ -342,16 +342,16 @@ func (pq *ProfileQuery) Clone() *ProfileQuery {
 		return nil
 	}
 	return &ProfileQuery{
-		config:            pq.config,
-		limit:             pq.limit,
-		offset:            pq.offset,
-		order:             append([]OrderFunc{}, pq.order...),
-		inters:            append([]Interceptor{}, pq.inters...),
-		predicates:        append([]predicate.Profile{}, pq.predicates...),
-		withFriends:       pq.withFriends.Clone(),
-		withSalleReservee: pq.withSalleReservee.Clone(),
-		withNetworking:    pq.withNetworking.Clone(),
-		withReservations:  pq.withReservations.Clone(),
+		config:           pq.config,
+		limit:            pq.limit,
+		offset:           pq.offset,
+		order:            append([]OrderFunc{}, pq.order...),
+		inters:           append([]Interceptor{}, pq.inters...),
+		predicates:       append([]predicate.Profile{}, pq.predicates...),
+		withFriends:      pq.withFriends.Clone(),
+		withBookings:     pq.withBookings.Clone(),
+		withFriendsData:  pq.withFriendsData.Clone(),
+		withBookingsData: pq.withBookingsData.Clone(),
 		// clone intermediate query.
 		sql:    pq.sql.Clone(),
 		path:   pq.path,
@@ -370,36 +370,36 @@ func (pq *ProfileQuery) WithFriends(opts ...func(*ProfileQuery)) *ProfileQuery {
 	return pq
 }
 
-// WithSalleReservee tells the query-builder to eager-load the nodes that are connected to
-// the "salle_reservee" edge. The optional arguments are used to configure the query builder of the edge.
-func (pq *ProfileQuery) WithSalleReservee(opts ...func(*SalleQuery)) *ProfileQuery {
-	query := (&SalleClient{config: pq.config}).Query()
+// WithBookings tells the query-builder to eager-load the nodes that are connected to
+// the "bookings" edge. The optional arguments are used to configure the query builder of the edge.
+func (pq *ProfileQuery) WithBookings(opts ...func(*RoomQuery)) *ProfileQuery {
+	query := (&RoomClient{config: pq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	pq.withSalleReservee = query
+	pq.withBookings = query
 	return pq
 }
 
-// WithNetworking tells the query-builder to eager-load the nodes that are connected to
-// the "networking" edge. The optional arguments are used to configure the query builder of the edge.
-func (pq *ProfileQuery) WithNetworking(opts ...func(*NetworkingQuery)) *ProfileQuery {
-	query := (&NetworkingClient{config: pq.config}).Query()
+// WithFriendsData tells the query-builder to eager-load the nodes that are connected to
+// the "friends_data" edge. The optional arguments are used to configure the query builder of the edge.
+func (pq *ProfileQuery) WithFriendsData(opts ...func(*FriendQuery)) *ProfileQuery {
+	query := (&FriendClient{config: pq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	pq.withNetworking = query
+	pq.withFriendsData = query
 	return pq
 }
 
-// WithReservations tells the query-builder to eager-load the nodes that are connected to
-// the "reservations" edge. The optional arguments are used to configure the query builder of the edge.
-func (pq *ProfileQuery) WithReservations(opts ...func(*ReservationQuery)) *ProfileQuery {
-	query := (&ReservationClient{config: pq.config}).Query()
+// WithBookingsData tells the query-builder to eager-load the nodes that are connected to
+// the "bookings_data" edge. The optional arguments are used to configure the query builder of the edge.
+func (pq *ProfileQuery) WithBookingsData(opts ...func(*BookingQuery)) *ProfileQuery {
+	query := (&BookingClient{config: pq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	pq.withReservations = query
+	pq.withBookingsData = query
 	return pq
 }
 
@@ -483,9 +483,9 @@ func (pq *ProfileQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Prof
 		_spec       = pq.querySpec()
 		loadedTypes = [4]bool{
 			pq.withFriends != nil,
-			pq.withSalleReservee != nil,
-			pq.withNetworking != nil,
-			pq.withReservations != nil,
+			pq.withBookings != nil,
+			pq.withFriendsData != nil,
+			pq.withBookingsData != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -513,24 +513,24 @@ func (pq *ProfileQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Prof
 			return nil, err
 		}
 	}
-	if query := pq.withSalleReservee; query != nil {
-		if err := pq.loadSalleReservee(ctx, query, nodes,
-			func(n *Profile) { n.Edges.SalleReservee = []*Salle{} },
-			func(n *Profile, e *Salle) { n.Edges.SalleReservee = append(n.Edges.SalleReservee, e) }); err != nil {
+	if query := pq.withBookings; query != nil {
+		if err := pq.loadBookings(ctx, query, nodes,
+			func(n *Profile) { n.Edges.Bookings = []*Room{} },
+			func(n *Profile, e *Room) { n.Edges.Bookings = append(n.Edges.Bookings, e) }); err != nil {
 			return nil, err
 		}
 	}
-	if query := pq.withNetworking; query != nil {
-		if err := pq.loadNetworking(ctx, query, nodes,
-			func(n *Profile) { n.Edges.Networking = []*Networking{} },
-			func(n *Profile, e *Networking) { n.Edges.Networking = append(n.Edges.Networking, e) }); err != nil {
+	if query := pq.withFriendsData; query != nil {
+		if err := pq.loadFriendsData(ctx, query, nodes,
+			func(n *Profile) { n.Edges.FriendsData = []*Friend{} },
+			func(n *Profile, e *Friend) { n.Edges.FriendsData = append(n.Edges.FriendsData, e) }); err != nil {
 			return nil, err
 		}
 	}
-	if query := pq.withReservations; query != nil {
-		if err := pq.loadReservations(ctx, query, nodes,
-			func(n *Profile) { n.Edges.Reservations = []*Reservation{} },
-			func(n *Profile, e *Reservation) { n.Edges.Reservations = append(n.Edges.Reservations, e) }); err != nil {
+	if query := pq.withBookingsData; query != nil {
+		if err := pq.loadBookingsData(ctx, query, nodes,
+			func(n *Profile) { n.Edges.BookingsData = []*Booking{} },
+			func(n *Profile, e *Booking) { n.Edges.BookingsData = append(n.Edges.BookingsData, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -595,7 +595,7 @@ func (pq *ProfileQuery) loadFriends(ctx context.Context, query *ProfileQuery, no
 	}
 	return nil
 }
-func (pq *ProfileQuery) loadSalleReservee(ctx context.Context, query *SalleQuery, nodes []*Profile, init func(*Profile), assign func(*Profile, *Salle)) error {
+func (pq *ProfileQuery) loadBookings(ctx context.Context, query *RoomQuery, nodes []*Profile, init func(*Profile), assign func(*Profile, *Room)) error {
 	edgeIDs := make([]driver.Value, len(nodes))
 	byID := make(map[uuid.UUID]*Profile)
 	nids := make(map[int]map[*Profile]struct{})
@@ -607,11 +607,11 @@ func (pq *ProfileQuery) loadSalleReservee(ctx context.Context, query *SalleQuery
 		}
 	}
 	query.Where(func(s *sql.Selector) {
-		joinT := sql.Table(profile.SalleReserveeTable)
-		s.Join(joinT).On(s.C(salle.FieldID), joinT.C(profile.SalleReserveePrimaryKey[1]))
-		s.Where(sql.InValues(joinT.C(profile.SalleReserveePrimaryKey[0]), edgeIDs...))
+		joinT := sql.Table(profile.BookingsTable)
+		s.Join(joinT).On(s.C(room.FieldID), joinT.C(profile.BookingsPrimaryKey[1]))
+		s.Where(sql.InValues(joinT.C(profile.BookingsPrimaryKey[0]), edgeIDs...))
 		columns := s.SelectedColumns()
-		s.Select(joinT.C(profile.SalleReserveePrimaryKey[0]))
+		s.Select(joinT.C(profile.BookingsPrimaryKey[0]))
 		s.AppendSelect(columns...)
 		s.SetDistinct(false)
 	})
@@ -645,7 +645,7 @@ func (pq *ProfileQuery) loadSalleReservee(ctx context.Context, query *SalleQuery
 	for _, n := range neighbors {
 		nodes, ok := nids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected "salle_reservee" node returned %v`, n.ID)
+			return fmt.Errorf(`unexpected "bookings" node returned %v`, n.ID)
 		}
 		for kn := range nodes {
 			assign(kn, n)
@@ -653,7 +653,7 @@ func (pq *ProfileQuery) loadSalleReservee(ctx context.Context, query *SalleQuery
 	}
 	return nil
 }
-func (pq *ProfileQuery) loadNetworking(ctx context.Context, query *NetworkingQuery, nodes []*Profile, init func(*Profile), assign func(*Profile, *Networking)) error {
+func (pq *ProfileQuery) loadFriendsData(ctx context.Context, query *FriendQuery, nodes []*Profile, init func(*Profile), assign func(*Profile, *Friend)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*Profile)
 	for i := range nodes {
@@ -663,8 +663,8 @@ func (pq *ProfileQuery) loadNetworking(ctx context.Context, query *NetworkingQue
 			init(nodes[i])
 		}
 	}
-	query.Where(predicate.Networking(func(s *sql.Selector) {
-		s.Where(sql.InValues(profile.NetworkingColumn, fks...))
+	query.Where(predicate.Friend(func(s *sql.Selector) {
+		s.Where(sql.InValues(profile.FriendsDataColumn, fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -680,7 +680,7 @@ func (pq *ProfileQuery) loadNetworking(ctx context.Context, query *NetworkingQue
 	}
 	return nil
 }
-func (pq *ProfileQuery) loadReservations(ctx context.Context, query *ReservationQuery, nodes []*Profile, init func(*Profile), assign func(*Profile, *Reservation)) error {
+func (pq *ProfileQuery) loadBookingsData(ctx context.Context, query *BookingQuery, nodes []*Profile, init func(*Profile), assign func(*Profile, *Booking)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*Profile)
 	for i := range nodes {
@@ -690,8 +690,8 @@ func (pq *ProfileQuery) loadReservations(ctx context.Context, query *Reservation
 			init(nodes[i])
 		}
 	}
-	query.Where(predicate.Reservation(func(s *sql.Selector) {
-		s.Where(sql.InValues(profile.ReservationsColumn, fks...))
+	query.Where(predicate.Booking(func(s *sql.Selector) {
+		s.Where(sql.InValues(profile.BookingsDataColumn, fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

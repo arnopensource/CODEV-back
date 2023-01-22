@@ -10,7 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/abc3354/CODEV-back/ent/profile"
-	"github.com/abc3354/CODEV-back/ent/salle"
+	"github.com/abc3354/CODEV-back/ent/room"
 	"github.com/google/uuid"
 )
 
@@ -33,9 +33,9 @@ func (pc *ProfileCreate) SetLastname(s string) *ProfileCreate {
 	return pc
 }
 
-// SetTelephone sets the "telephone" field.
-func (pc *ProfileCreate) SetTelephone(s string) *ProfileCreate {
-	pc.mutation.SetTelephone(s)
+// SetPhone sets the "phone" field.
+func (pc *ProfileCreate) SetPhone(s string) *ProfileCreate {
+	pc.mutation.SetPhone(s)
 	return pc
 }
 
@@ -60,19 +60,19 @@ func (pc *ProfileCreate) AddFriends(p ...*Profile) *ProfileCreate {
 	return pc.AddFriendIDs(ids...)
 }
 
-// AddSalleReserveeIDs adds the "salle_reservee" edge to the Salle entity by IDs.
-func (pc *ProfileCreate) AddSalleReserveeIDs(ids ...int) *ProfileCreate {
-	pc.mutation.AddSalleReserveeIDs(ids...)
+// AddBookingIDs adds the "bookings" edge to the Room entity by IDs.
+func (pc *ProfileCreate) AddBookingIDs(ids ...int) *ProfileCreate {
+	pc.mutation.AddBookingIDs(ids...)
 	return pc
 }
 
-// AddSalleReservee adds the "salle_reservee" edges to the Salle entity.
-func (pc *ProfileCreate) AddSalleReservee(s ...*Salle) *ProfileCreate {
-	ids := make([]int, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+// AddBookings adds the "bookings" edges to the Room entity.
+func (pc *ProfileCreate) AddBookings(r ...*Room) *ProfileCreate {
+	ids := make([]int, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
 	}
-	return pc.AddSalleReserveeIDs(ids...)
+	return pc.AddBookingIDs(ids...)
 }
 
 // Mutation returns the ProfileMutation object of the builder.
@@ -115,8 +115,8 @@ func (pc *ProfileCreate) check() error {
 	if _, ok := pc.mutation.Lastname(); !ok {
 		return &ValidationError{Name: "lastname", err: errors.New(`ent: missing required field "Profile.lastname"`)}
 	}
-	if _, ok := pc.mutation.Telephone(); !ok {
-		return &ValidationError{Name: "telephone", err: errors.New(`ent: missing required field "Profile.telephone"`)}
+	if _, ok := pc.mutation.Phone(); !ok {
+		return &ValidationError{Name: "phone", err: errors.New(`ent: missing required field "Profile.phone"`)}
 	}
 	return nil
 }
@@ -167,9 +167,9 @@ func (pc *ProfileCreate) createSpec() (*Profile, *sqlgraph.CreateSpec) {
 		_spec.SetField(profile.FieldLastname, field.TypeString, value)
 		_node.Lastname = value
 	}
-	if value, ok := pc.mutation.Telephone(); ok {
-		_spec.SetField(profile.FieldTelephone, field.TypeString, value)
-		_node.Telephone = value
+	if value, ok := pc.mutation.Phone(); ok {
+		_spec.SetField(profile.FieldPhone, field.TypeString, value)
+		_node.Phone = value
 	}
 	if nodes := pc.mutation.FriendsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -190,17 +190,17 @@ func (pc *ProfileCreate) createSpec() (*Profile, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := pc.mutation.SalleReserveeIDs(); len(nodes) > 0 {
+	if nodes := pc.mutation.BookingsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   profile.SalleReserveeTable,
-			Columns: profile.SalleReserveePrimaryKey,
+			Table:   profile.BookingsTable,
+			Columns: profile.BookingsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: salle.FieldID,
+					Column: room.FieldID,
 				},
 			},
 		}

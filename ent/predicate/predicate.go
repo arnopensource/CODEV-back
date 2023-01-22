@@ -6,17 +6,17 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
-// Networking is the predicate function for networking builders.
-type Networking func(*sql.Selector)
+// AvailableRoom is the predicate function for availableroom builders.
+type AvailableRoom func(*sql.Selector)
+
+// Booking is the predicate function for booking builders.
+type Booking func(*sql.Selector)
+
+// Friend is the predicate function for friend builders.
+type Friend func(*sql.Selector)
 
 // Profile is the predicate function for profile builders.
 type Profile func(*sql.Selector)
 
-// Reservation is the predicate function for reservation builders.
-type Reservation func(*sql.Selector)
-
-// Salle is the predicate function for salle builders.
-type Salle func(*sql.Selector)
-
-// SalleDisponible is the predicate function for salledisponible builders.
-type SalleDisponible func(*sql.Selector)
+// Room is the predicate function for room builders.
+type Room func(*sql.Selector)

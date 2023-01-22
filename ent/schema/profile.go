@@ -7,25 +7,22 @@ import (
 	"github.com/google/uuid"
 )
 
-// Profile holds the schema definition for the Profile entity.
 type Profile struct {
 	ent.Schema
 }
 
-// Fields of the Profile.
 func (Profile) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.New()),
 		field.String("firstname"),
 		field.String("lastname"),
-		field.String("telephone"),
+		field.String("phone"),
 	}
 }
 
-// Edges of the Profile.
 func (Profile) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("friends", Profile.Type).Through("networking", Networking.Type),
-		edge.To("salle_reservee", Salle.Type).Through("reservations", Reservation.Type),
+		edge.To("friends", Profile.Type).Through("friends_data", Friend.Type),
+		edge.To("bookings", Room.Type).Through("bookings_data", Booking.Type),
 	}
 }

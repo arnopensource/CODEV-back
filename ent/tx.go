@@ -12,16 +12,16 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
-	// Networking is the client for interacting with the Networking builders.
-	Networking *NetworkingClient
+	// AvailableRoom is the client for interacting with the AvailableRoom builders.
+	AvailableRoom *AvailableRoomClient
+	// Booking is the client for interacting with the Booking builders.
+	Booking *BookingClient
+	// Friend is the client for interacting with the Friend builders.
+	Friend *FriendClient
 	// Profile is the client for interacting with the Profile builders.
 	Profile *ProfileClient
-	// Reservation is the client for interacting with the Reservation builders.
-	Reservation *ReservationClient
-	// Salle is the client for interacting with the Salle builders.
-	Salle *SalleClient
-	// SalleDisponible is the client for interacting with the SalleDisponible builders.
-	SalleDisponible *SalleDisponibleClient
+	// Room is the client for interacting with the Room builders.
+	Room *RoomClient
 
 	// lazily loaded.
 	client     *Client
@@ -153,11 +153,11 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
-	tx.Networking = NewNetworkingClient(tx.config)
+	tx.AvailableRoom = NewAvailableRoomClient(tx.config)
+	tx.Booking = NewBookingClient(tx.config)
+	tx.Friend = NewFriendClient(tx.config)
 	tx.Profile = NewProfileClient(tx.config)
-	tx.Reservation = NewReservationClient(tx.config)
-	tx.Salle = NewSalleClient(tx.config)
-	tx.SalleDisponible = NewSalleDisponibleClient(tx.config)
+	tx.Room = NewRoomClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.
@@ -167,7 +167,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: Networking.QueryXXX(), the query will be executed
+// applies a query, for example: AvailableRoom.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.
