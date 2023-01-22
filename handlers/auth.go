@@ -44,7 +44,7 @@ func Signup(c *gin.Context) {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	if resp.ConfirmedAt.IsZero() {
+	if !resp.ConfirmedAt.IsZero() {
 		c.JSON(http.StatusBadRequest, map[string]any{
 			"error": "email already in use",
 		})
