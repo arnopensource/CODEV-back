@@ -32,11 +32,14 @@ func Signup(c *gin.Context) {
 	if err := c.MustBindWith(&body, binding.JSON); err != nil {
 		return
 	}
-	resp, err := gotrue.Get().Signup(types.SignupRequest{
+	req := types.SignupRequest{
 		Email:    body.Email,
 		Password: body.Password,
-		Data:     map[string]interface{}{"nfc": body.NFC},
-	})
+	}
+	if body.NFC != "" {
+		req.Data = map[string]interface{}{"nfc": body.NFC}
+	}
+	resp, err := gotrue.Get().Signup(req)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
