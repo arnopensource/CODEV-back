@@ -92,3 +92,16 @@ func NFCChangeID(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, "ok")
 }
+
+func CheckToken(c *gin.Context) {
+	var body TokenBody
+	if err := c.MustBindWith(&body, binding.JSON); err != nil {
+		return
+	}
+	_, err := gotrue.Get().WithToken(body.Token).GetUser()
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	c.JSON(http.StatusOK, "ok")
+}
