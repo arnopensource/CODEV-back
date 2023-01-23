@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	"github.com/abc3354/CODEV-back/ent/profile"
 	"github.com/abc3354/CODEV-back/services/database"
@@ -39,16 +40,26 @@ func Signup(c *gin.Context) {
 	if err := c.MustBindWith(&body, binding.JSON); err != nil {
 		return
 	}
-	resp, err := gotrue.Get().Signup(types.SignupRequest{
+	req := types.SignupRequest{
 		Email:    body.Email,
 		Password: body.Password,
-		Data:     map[string]interface{}{"nfc": body.NFC},
-	})
+	}
+	if body.NFC != "" {
+		req.Data = map[string]interface{}{"nfc": body.NFC}
+	}
+	resp, err := gotrue.Get().Signup(req)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
+	if !resp.ConfirmedAt.IsZero() {
+		c.JSON(http.StatusBadRequest, map[string]any{
+			"error": "email already in use",
+		})
+		return
+	}
 	if err = createProfile(c, resp.User.ID); err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 	c.JSON(http.StatusOK, SignupResponse{
@@ -83,13 +94,40 @@ func NFCLogin(c *gin.Context) {
 }
 
 func NFCChangeID(c *gin.Context) {
+	token := c.GetHeader("Authorization")
+	if !strings.HasPrefix(token, "Bearer ") {
+		c.JSON(http.StatusBadRequest, map[string]any{
+			"error": "no token in header",
+		})
+		return
+	}
+	token = strings.TrimPrefix(token, "Bearer ")
+
 	var body NFCModificationBody
 	if err := c.MustBindWith(&body, binding.JSON); err != nil {
 		return
 	}
-	_, err := gotrue.Get().WithToken(body.Token).UpdateUser(types.UpdateUserRequest{
+	_, err := gotrue.Get().WithToken(token).UpdateUser(types.UpdateUserRequest{
 		Data: map[string]interface{}{"nfc": body.NFC},
 	})
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	c.JSON(http.StatusOK, "ok")
+}
+
+func CheckToken(c *gin.Context) {
+	token := c.GetHeader("Authorization")
+	if !strings.HasPrefix(token, "Bearer ") {
+		c.JSON(http.StatusBadRequest, map[string]any{
+			"error": "no token in header",
+		})
+		return
+	}
+	token = strings.TrimPrefix(token, "Bearer ")
+
+	_, err := gotrue.Get().WithToken(token).GetUser()
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return

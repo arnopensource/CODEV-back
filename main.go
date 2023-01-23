@@ -27,6 +27,7 @@ func main() {
 	r.POST("/auth/signup", handlers.Signup)
 	r.POST("/auth/nfc/login", handlers.NFCLogin)
 	r.PUT("/auth/nfc/id", handlers.NFCChangeID)
+	r.GET("/auth/check", handlers.CheckToken)
 
 	r.GET("/rooms/empty", handlers.GetEmptyRooms)
 

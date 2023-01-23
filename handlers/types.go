@@ -10,7 +10,7 @@ type LoginBody struct {
 type SignupBody struct {
 	Email    string `json:"email" binding:"required"`
 	Password string `json:"password" binding:"required"`
-	NFC      string `json:"nfc" binding:"required"`
+	NFC      string `json:"nfc"`
 }
 
 type SignupResponse struct {
@@ -23,6 +23,5 @@ type NFCLoginBody struct {
 }
 
 type NFCModificationBody struct {
-	Token string `json:"token" binding:"required"`
-	NFC   string `json:"nfc" binding:"required"`
+	NFC string `json:"nfc" binding:"required"`
 }
