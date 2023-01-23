@@ -23,10 +23,5 @@ type NFCLoginBody struct {
 }
 
 type NFCModificationBody struct {
-	Token string `json:"token" binding:"required"`
-	NFC   string `json:"nfc" binding:"required"`
-}
-
-type TokenBody struct {
-	Token string `json:"token" binding:"required"`
+	NFC string `json:"nfc" binding:"required"`
 }

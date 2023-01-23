@@ -2,10 +2,12 @@ package handlers
 
 import (
 	"context"
+	"net/http"
+	"strings"
+
 	"github.com/abc3354/CODEV-back/services/database"
 	"github.com/abc3354/CODEV-back/services/env"
 	"github.com/abc3354/CODEV-back/services/gotrue"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -79,11 +81,20 @@ func NFCLogin(c *gin.Context) {
 }
 
 func NFCChangeID(c *gin.Context) {
+	token := c.GetHeader("Authorization")
+	if !strings.HasPrefix(token, "Bearer ") {
+		c.JSON(http.StatusBadRequest, map[string]any{
+			"error": "no token in header",
+		})
+		return
+	}
+	token = strings.TrimPrefix(token, "Bearer ")
+
 	var body NFCModificationBody
 	if err := c.MustBindWith(&body, binding.JSON); err != nil {
 		return
 	}
-	_, err := gotrue.Get().WithToken(body.Token).UpdateUser(types.UpdateUserRequest{
+	_, err := gotrue.Get().WithToken(token).UpdateUser(types.UpdateUserRequest{
 		Data: map[string]interface{}{"nfc": body.NFC},
 	})
 	if err != nil {
@@ -94,11 +105,16 @@ func NFCChangeID(c *gin.Context) {
 }
 
 func CheckToken(c *gin.Context) {
-	var body TokenBody
-	if err := c.MustBindWith(&body, binding.JSON); err != nil {
+	token := c.GetHeader("Authorization")
+	if !strings.HasPrefix(token, "Bearer ") {
+		c.JSON(http.StatusBadRequest, map[string]any{
+			"error": "no token in header",
+		})
 		return
 	}
-	_, err := gotrue.Get().WithToken(body.Token).GetUser()
+	token = strings.TrimPrefix(token, "Bearer ")
+
+	_, err := gotrue.Get().WithToken(token).GetUser()
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
