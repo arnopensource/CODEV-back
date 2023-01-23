@@ -301,12 +301,12 @@ func (arq *AvailableRoomQuery) WithRooms(opts ...func(*RoomQuery)) *AvailableRoo
 // Example:
 //
 //	var v []struct {
-//		RoomID string `json:"room_id,omitempty"`
+//		Start time.Time `json:"start,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.AvailableRoom.Query().
-//		GroupBy(availableroom.FieldRoomID).
+//		GroupBy(availableroom.FieldStart).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (arq *AvailableRoomQuery) GroupBy(field string, fields ...string) *AvailableRoomGroupBy {
@@ -324,11 +324,11 @@ func (arq *AvailableRoomQuery) GroupBy(field string, fields ...string) *Availabl
 // Example:
 //
 //	var v []struct {
-//		RoomID string `json:"room_id,omitempty"`
+//		Start time.Time `json:"start,omitempty"`
 //	}
 //
 //	client.AvailableRoom.Query().
-//		Select(availableroom.FieldRoomID).
+//		Select(availableroom.FieldStart).
 //		Scan(ctx, &v)
 func (arq *AvailableRoomQuery) Select(fields ...string) *AvailableRoomSelect {
 	arq.fields = append(arq.fields, fields...)

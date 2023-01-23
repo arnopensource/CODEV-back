@@ -29,12 +29,6 @@ func (aru *AvailableRoomUpdate) Where(ps ...predicate.AvailableRoom) *AvailableR
 	return aru
 }
 
-// SetRoomID sets the "room_id" field.
-func (aru *AvailableRoomUpdate) SetRoomID(s string) *AvailableRoomUpdate {
-	aru.mutation.SetRoomID(s)
-	return aru
-}
-
 // SetStart sets the "start" field.
 func (aru *AvailableRoomUpdate) SetStart(t time.Time) *AvailableRoomUpdate {
 	aru.mutation.SetStart(t)
@@ -122,9 +116,6 @@ func (aru *AvailableRoomUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			}
 		}
 	}
-	if value, ok := aru.mutation.RoomID(); ok {
-		_spec.SetField(availableroom.FieldRoomID, field.TypeString, value)
-	}
 	if value, ok := aru.mutation.Start(); ok {
 		_spec.SetField(availableroom.FieldStart, field.TypeTime, value)
 	}
@@ -184,12 +175,6 @@ type AvailableRoomUpdateOne struct {
 	fields   []string
 	hooks    []Hook
 	mutation *AvailableRoomMutation
-}
-
-// SetRoomID sets the "room_id" field.
-func (aruo *AvailableRoomUpdateOne) SetRoomID(s string) *AvailableRoomUpdateOne {
-	aruo.mutation.SetRoomID(s)
-	return aruo
 }
 
 // SetStart sets the "start" field.
@@ -302,9 +287,6 @@ func (aruo *AvailableRoomUpdateOne) sqlSave(ctx context.Context) (_node *Availab
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := aruo.mutation.RoomID(); ok {
-		_spec.SetField(availableroom.FieldRoomID, field.TypeString, value)
 	}
 	if value, ok := aruo.mutation.Start(); ok {
 		_spec.SetField(availableroom.FieldStart, field.TypeTime, value)

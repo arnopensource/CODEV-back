@@ -11,7 +11,6 @@ var (
 	// AvailableRoomsColumns holds the columns for the "available_rooms" table.
 	AvailableRoomsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "room_id", Type: field.TypeString},
 		{Name: "start", Type: field.TypeTime},
 		{Name: "end", Type: field.TypeTime},
 		{Name: "room_availability", Type: field.TypeInt, Nullable: true},
@@ -24,7 +23,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "available_rooms_rooms_availability",
-				Columns:    []*schema.Column{AvailableRoomsColumns[4]},
+				Columns:    []*schema.Column{AvailableRoomsColumns[3]},
 				RefColumns: []*schema.Column{RoomsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},

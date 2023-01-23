@@ -17,8 +17,6 @@ type AvailableRoom struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
-	// RoomID holds the value of the "room_id" field.
-	RoomID string `json:"room_id,omitempty"`
 	// Start holds the value of the "start" field.
 	Start time.Time `json:"start,omitempty"`
 	// End holds the value of the "end" field.
@@ -58,8 +56,6 @@ func (*AvailableRoom) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case availableroom.FieldID:
 			values[i] = new(sql.NullInt64)
-		case availableroom.FieldRoomID:
-			values[i] = new(sql.NullString)
 		case availableroom.FieldStart, availableroom.FieldEnd:
 			values[i] = new(sql.NullTime)
 		case availableroom.ForeignKeys[0]: // room_availability
@@ -85,12 +81,6 @@ func (ar *AvailableRoom) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			ar.ID = int(value.Int64)
-		case availableroom.FieldRoomID:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field room_id", values[i])
-			} else if value.Valid {
-				ar.RoomID = value.String
-			}
 		case availableroom.FieldStart:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field start", values[i])
@@ -143,9 +133,6 @@ func (ar *AvailableRoom) String() string {
 	var builder strings.Builder
 	builder.WriteString("AvailableRoom(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", ar.ID))
-	builder.WriteString("room_id=")
-	builder.WriteString(ar.RoomID)
-	builder.WriteString(", ")
 	builder.WriteString("start=")
 	builder.WriteString(ar.Start.Format(time.ANSIC))
 	builder.WriteString(", ")

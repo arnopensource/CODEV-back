@@ -12,7 +12,6 @@ type AvailableRoom struct {
 
 func (AvailableRoom) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("room_id"),
 		field.Time("start"),
 		field.Time("end"),
 	}

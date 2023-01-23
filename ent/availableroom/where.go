@@ -55,11 +55,6 @@ func IDLTE(id int) predicate.AvailableRoom {
 	return predicate.AvailableRoom(sql.FieldLTE(FieldID, id))
 }
 
-// RoomID applies equality check predicate on the "room_id" field. It's identical to RoomIDEQ.
-func RoomID(v string) predicate.AvailableRoom {
-	return predicate.AvailableRoom(sql.FieldEQ(FieldRoomID, v))
-}
-
 // Start applies equality check predicate on the "start" field. It's identical to StartEQ.
 func Start(v time.Time) predicate.AvailableRoom {
 	return predicate.AvailableRoom(sql.FieldEQ(FieldStart, v))
@@ -68,71 +63,6 @@ func Start(v time.Time) predicate.AvailableRoom {
 // End applies equality check predicate on the "end" field. It's identical to EndEQ.
 func End(v time.Time) predicate.AvailableRoom {
 	return predicate.AvailableRoom(sql.FieldEQ(FieldEnd, v))
-}
-
-// RoomIDEQ applies the EQ predicate on the "room_id" field.
-func RoomIDEQ(v string) predicate.AvailableRoom {
-	return predicate.AvailableRoom(sql.FieldEQ(FieldRoomID, v))
-}
-
-// RoomIDNEQ applies the NEQ predicate on the "room_id" field.
-func RoomIDNEQ(v string) predicate.AvailableRoom {
-	return predicate.AvailableRoom(sql.FieldNEQ(FieldRoomID, v))
-}
-
-// RoomIDIn applies the In predicate on the "room_id" field.
-func RoomIDIn(vs ...string) predicate.AvailableRoom {
-	return predicate.AvailableRoom(sql.FieldIn(FieldRoomID, vs...))
-}
-
-// RoomIDNotIn applies the NotIn predicate on the "room_id" field.
-func RoomIDNotIn(vs ...string) predicate.AvailableRoom {
-	return predicate.AvailableRoom(sql.FieldNotIn(FieldRoomID, vs...))
-}
-
-// RoomIDGT applies the GT predicate on the "room_id" field.
-func RoomIDGT(v string) predicate.AvailableRoom {
-	return predicate.AvailableRoom(sql.FieldGT(FieldRoomID, v))
-}
-
-// RoomIDGTE applies the GTE predicate on the "room_id" field.
-func RoomIDGTE(v string) predicate.AvailableRoom {
-	return predicate.AvailableRoom(sql.FieldGTE(FieldRoomID, v))
-}
-
-// RoomIDLT applies the LT predicate on the "room_id" field.
-func RoomIDLT(v string) predicate.AvailableRoom {
-	return predicate.AvailableRoom(sql.FieldLT(FieldRoomID, v))
-}
-
-// RoomIDLTE applies the LTE predicate on the "room_id" field.
-func RoomIDLTE(v string) predicate.AvailableRoom {
-	return predicate.AvailableRoom(sql.FieldLTE(FieldRoomID, v))
-}
-
-// RoomIDContains applies the Contains predicate on the "room_id" field.
-func RoomIDContains(v string) predicate.AvailableRoom {
-	return predicate.AvailableRoom(sql.FieldContains(FieldRoomID, v))
-}
-
-// RoomIDHasPrefix applies the HasPrefix predicate on the "room_id" field.
-func RoomIDHasPrefix(v string) predicate.AvailableRoom {
-	return predicate.AvailableRoom(sql.FieldHasPrefix(FieldRoomID, v))
-}
-
-// RoomIDHasSuffix applies the HasSuffix predicate on the "room_id" field.
-func RoomIDHasSuffix(v string) predicate.AvailableRoom {
-	return predicate.AvailableRoom(sql.FieldHasSuffix(FieldRoomID, v))
-}
-
-// RoomIDEqualFold applies the EqualFold predicate on the "room_id" field.
-func RoomIDEqualFold(v string) predicate.AvailableRoom {
-	return predicate.AvailableRoom(sql.FieldEqualFold(FieldRoomID, v))
-}
-
-// RoomIDContainsFold applies the ContainsFold predicate on the "room_id" field.
-func RoomIDContainsFold(v string) predicate.AvailableRoom {
-	return predicate.AvailableRoom(sql.FieldContainsFold(FieldRoomID, v))
 }
 
 // StartEQ applies the EQ predicate on the "start" field.

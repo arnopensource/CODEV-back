@@ -21,12 +21,6 @@ type AvailableRoomCreate struct {
 	hooks    []Hook
 }
 
-// SetRoomID sets the "room_id" field.
-func (arc *AvailableRoomCreate) SetRoomID(s string) *AvailableRoomCreate {
-	arc.mutation.SetRoomID(s)
-	return arc
-}
-
 // SetStart sets the "start" field.
 func (arc *AvailableRoomCreate) SetStart(t time.Time) *AvailableRoomCreate {
 	arc.mutation.SetStart(t)
@@ -92,9 +86,6 @@ func (arc *AvailableRoomCreate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (arc *AvailableRoomCreate) check() error {
-	if _, ok := arc.mutation.RoomID(); !ok {
-		return &ValidationError{Name: "room_id", err: errors.New(`ent: missing required field "AvailableRoom.room_id"`)}
-	}
 	if _, ok := arc.mutation.Start(); !ok {
 		return &ValidationError{Name: "start", err: errors.New(`ent: missing required field "AvailableRoom.start"`)}
 	}
@@ -133,10 +124,6 @@ func (arc *AvailableRoomCreate) createSpec() (*AvailableRoom, *sqlgraph.CreateSp
 			},
 		}
 	)
-	if value, ok := arc.mutation.RoomID(); ok {
-		_spec.SetField(availableroom.FieldRoomID, field.TypeString, value)
-		_node.RoomID = value
-	}
 	if value, ok := arc.mutation.Start(); ok {
 		_spec.SetField(availableroom.FieldStart, field.TypeTime, value)
 		_node.Start = value

@@ -7,8 +7,6 @@ const (
 	Label = "available_room"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
-	// FieldRoomID holds the string denoting the room_id field in the database.
-	FieldRoomID = "room_id"
 	// FieldStart holds the string denoting the start field in the database.
 	FieldStart = "start"
 	// FieldEnd holds the string denoting the end field in the database.
@@ -29,7 +27,6 @@ const (
 // Columns holds all SQL columns for availableroom fields.
 var Columns = []string{
 	FieldID,
-	FieldRoomID,
 	FieldStart,
 	FieldEnd,
 }

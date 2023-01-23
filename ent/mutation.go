@@ -43,7 +43,6 @@ type AvailableRoomMutation struct {
 	op            Op
 	typ           string
 	id            *int
-	room_id       *string
 	start         *time.Time
 	end           *time.Time
 	clearedFields map[string]struct{}
@@ -150,42 +149,6 @@ func (m *AvailableRoomMutation) IDs(ctx context.Context) ([]int, error) {
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
-}
-
-// SetRoomID sets the "room_id" field.
-func (m *AvailableRoomMutation) SetRoomID(s string) {
-	m.room_id = &s
-}
-
-// RoomID returns the value of the "room_id" field in the mutation.
-func (m *AvailableRoomMutation) RoomID() (r string, exists bool) {
-	v := m.room_id
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldRoomID returns the old "room_id" field's value of the AvailableRoom entity.
-// If the AvailableRoom object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AvailableRoomMutation) OldRoomID(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldRoomID is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldRoomID requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldRoomID: %w", err)
-	}
-	return oldValue.RoomID, nil
-}
-
-// ResetRoomID resets all changes to the "room_id" field.
-func (m *AvailableRoomMutation) ResetRoomID() {
-	m.room_id = nil
 }
 
 // SetStart sets the "start" field.
@@ -333,10 +296,7 @@ func (m *AvailableRoomMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AvailableRoomMutation) Fields() []string {
-	fields := make([]string, 0, 3)
-	if m.room_id != nil {
-		fields = append(fields, availableroom.FieldRoomID)
-	}
+	fields := make([]string, 0, 2)
 	if m.start != nil {
 		fields = append(fields, availableroom.FieldStart)
 	}
@@ -351,8 +311,6 @@ func (m *AvailableRoomMutation) Fields() []string {
 // schema.
 func (m *AvailableRoomMutation) Field(name string) (ent.Value, bool) {
 	switch name {
-	case availableroom.FieldRoomID:
-		return m.RoomID()
 	case availableroom.FieldStart:
 		return m.Start()
 	case availableroom.FieldEnd:
@@ -366,8 +324,6 @@ func (m *AvailableRoomMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *AvailableRoomMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
-	case availableroom.FieldRoomID:
-		return m.OldRoomID(ctx)
 	case availableroom.FieldStart:
 		return m.OldStart(ctx)
 	case availableroom.FieldEnd:
@@ -381,13 +337,6 @@ func (m *AvailableRoomMutation) OldField(ctx context.Context, name string) (ent.
 // type.
 func (m *AvailableRoomMutation) SetField(name string, value ent.Value) error {
 	switch name {
-	case availableroom.FieldRoomID:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetRoomID(v)
-		return nil
 	case availableroom.FieldStart:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -451,9 +400,6 @@ func (m *AvailableRoomMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *AvailableRoomMutation) ResetField(name string) error {
 	switch name {
-	case availableroom.FieldRoomID:
-		m.ResetRoomID()
-		return nil
 	case availableroom.FieldStart:
 		m.ResetStart()
 		return nil
