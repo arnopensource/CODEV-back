@@ -101,7 +101,9 @@ func NFCChangeID(c *gin.Context) {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	c.JSON(http.StatusOK, "ok")
+	c.JSON(http.StatusOK, map[string]any{
+		"valid": true,
+	})
 }
 
 func CheckToken(c *gin.Context) {
@@ -119,5 +121,7 @@ func CheckToken(c *gin.Context) {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	c.JSON(http.StatusOK, "ok")
+	c.JSON(http.StatusOK, map[string]any{
+		"valid": true,
+	})
 }
