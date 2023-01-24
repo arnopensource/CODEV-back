@@ -5,22 +5,47 @@ package booking
 const (
 	// Label holds the string label denoting the booking type in the database.
 	Label = "booking"
-	// FieldID holds the string denoting the id field in the database.
-	FieldID = "id"
-	// FieldName holds the string denoting the name field in the database.
-	FieldName = "name"
+	// FieldProfileID holds the string denoting the profile_id field in the database.
+	FieldProfileID = "profile_id"
+	// FieldRoomID holds the string denoting the room_id field in the database.
+	FieldRoomID = "room_id"
+	// FieldNumber holds the string denoting the number field in the database.
+	FieldNumber = "number"
 	// FieldStart holds the string denoting the start field in the database.
 	FieldStart = "start"
 	// FieldEnd holds the string denoting the end field in the database.
 	FieldEnd = "end"
+	// EdgeProfile holds the string denoting the profile edge name in mutations.
+	EdgeProfile = "profile"
+	// EdgeRoom holds the string denoting the room edge name in mutations.
+	EdgeRoom = "room"
+	// ProfileFieldID holds the string denoting the ID field of the Profile.
+	ProfileFieldID = "id"
+	// RoomFieldID holds the string denoting the ID field of the Room.
+	RoomFieldID = "id"
 	// Table holds the table name of the booking in the database.
 	Table = "bookings"
+	// ProfileTable is the table that holds the profile relation/edge.
+	ProfileTable = "bookings"
+	// ProfileInverseTable is the table name for the Profile entity.
+	// It exists in this package in order to avoid circular dependency with the "profile" package.
+	ProfileInverseTable = "profiles"
+	// ProfileColumn is the table column denoting the profile relation/edge.
+	ProfileColumn = "profile_id"
+	// RoomTable is the table that holds the room relation/edge.
+	RoomTable = "bookings"
+	// RoomInverseTable is the table name for the Room entity.
+	// It exists in this package in order to avoid circular dependency with the "room" package.
+	RoomInverseTable = "rooms"
+	// RoomColumn is the table column denoting the room relation/edge.
+	RoomColumn = "room_id"
 )
 
 // Columns holds all SQL columns for booking fields.
 var Columns = []string{
-	FieldID,
-	FieldName,
+	FieldProfileID,
+	FieldRoomID,
+	FieldNumber,
 	FieldStart,
 	FieldEnd,
 }

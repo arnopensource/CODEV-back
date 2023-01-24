@@ -9,11 +9,17 @@ import (
 	"log"
 
 	"github.com/abc3354/CODEV-back/ent/migrate"
+	"github.com/google/uuid"
 
+	"github.com/abc3354/CODEV-back/ent/availableroom"
 	"github.com/abc3354/CODEV-back/ent/booking"
+	"github.com/abc3354/CODEV-back/ent/friend"
+	"github.com/abc3354/CODEV-back/ent/profile"
+	"github.com/abc3354/CODEV-back/ent/room"
 
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 // Client is the client that holds all ent builders.
@@ -21,8 +27,16 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// AvailableRoom is the client for interacting with the AvailableRoom builders.
+	AvailableRoom *AvailableRoomClient
 	// Booking is the client for interacting with the Booking builders.
 	Booking *BookingClient
+	// Friend is the client for interacting with the Friend builders.
+	Friend *FriendClient
+	// Profile is the client for interacting with the Profile builders.
+	Profile *ProfileClient
+	// Room is the client for interacting with the Room builders.
+	Room *RoomClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -36,7 +50,11 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.AvailableRoom = NewAvailableRoomClient(c.config)
 	c.Booking = NewBookingClient(c.config)
+	c.Friend = NewFriendClient(c.config)
+	c.Profile = NewProfileClient(c.config)
+	c.Room = NewRoomClient(c.config)
 }
 
 // Open opens a database/sql.DB specified by the driver name and
@@ -68,9 +86,13 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:     ctx,
-		config:  cfg,
-		Booking: NewBookingClient(cfg),
+		ctx:           ctx,
+		config:        cfg,
+		AvailableRoom: NewAvailableRoomClient(cfg),
+		Booking:       NewBookingClient(cfg),
+		Friend:        NewFriendClient(cfg),
+		Profile:       NewProfileClient(cfg),
+		Room:          NewRoomClient(cfg),
 	}, nil
 }
 
@@ -88,16 +110,20 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:     ctx,
-		config:  cfg,
-		Booking: NewBookingClient(cfg),
+		ctx:           ctx,
+		config:        cfg,
+		AvailableRoom: NewAvailableRoomClient(cfg),
+		Booking:       NewBookingClient(cfg),
+		Friend:        NewFriendClient(cfg),
+		Profile:       NewProfileClient(cfg),
+		Room:          NewRoomClient(cfg),
 	}, nil
 }
 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		Booking.
+//		AvailableRoom.
 //		Query().
 //		Count(ctx)
 func (c *Client) Debug() *Client {
@@ -119,22 +145,171 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
+	c.AvailableRoom.Use(hooks...)
 	c.Booking.Use(hooks...)
+	c.Friend.Use(hooks...)
+	c.Profile.Use(hooks...)
+	c.Room.Use(hooks...)
 }
 
 // Intercept adds the query interceptors to all the entity clients.
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
+	c.AvailableRoom.Intercept(interceptors...)
 	c.Booking.Intercept(interceptors...)
+	c.Friend.Intercept(interceptors...)
+	c.Profile.Intercept(interceptors...)
+	c.Room.Intercept(interceptors...)
 }
 
 // Mutate implements the ent.Mutator interface.
 func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
+	case *AvailableRoomMutation:
+		return c.AvailableRoom.mutate(ctx, m)
 	case *BookingMutation:
 		return c.Booking.mutate(ctx, m)
+	case *FriendMutation:
+		return c.Friend.mutate(ctx, m)
+	case *ProfileMutation:
+		return c.Profile.mutate(ctx, m)
+	case *RoomMutation:
+		return c.Room.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
+	}
+}
+
+// AvailableRoomClient is a client for the AvailableRoom schema.
+type AvailableRoomClient struct {
+	config
+}
+
+// NewAvailableRoomClient returns a client for the AvailableRoom from the given config.
+func NewAvailableRoomClient(c config) *AvailableRoomClient {
+	return &AvailableRoomClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `availableroom.Hooks(f(g(h())))`.
+func (c *AvailableRoomClient) Use(hooks ...Hook) {
+	c.hooks.AvailableRoom = append(c.hooks.AvailableRoom, hooks...)
+}
+
+// Use adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `availableroom.Intercept(f(g(h())))`.
+func (c *AvailableRoomClient) Intercept(interceptors ...Interceptor) {
+	c.inters.AvailableRoom = append(c.inters.AvailableRoom, interceptors...)
+}
+
+// Create returns a builder for creating a AvailableRoom entity.
+func (c *AvailableRoomClient) Create() *AvailableRoomCreate {
+	mutation := newAvailableRoomMutation(c.config, OpCreate)
+	return &AvailableRoomCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of AvailableRoom entities.
+func (c *AvailableRoomClient) CreateBulk(builders ...*AvailableRoomCreate) *AvailableRoomCreateBulk {
+	return &AvailableRoomCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for AvailableRoom.
+func (c *AvailableRoomClient) Update() *AvailableRoomUpdate {
+	mutation := newAvailableRoomMutation(c.config, OpUpdate)
+	return &AvailableRoomUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AvailableRoomClient) UpdateOne(ar *AvailableRoom) *AvailableRoomUpdateOne {
+	mutation := newAvailableRoomMutation(c.config, OpUpdateOne, withAvailableRoom(ar))
+	return &AvailableRoomUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AvailableRoomClient) UpdateOneID(id int) *AvailableRoomUpdateOne {
+	mutation := newAvailableRoomMutation(c.config, OpUpdateOne, withAvailableRoomID(id))
+	return &AvailableRoomUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for AvailableRoom.
+func (c *AvailableRoomClient) Delete() *AvailableRoomDelete {
+	mutation := newAvailableRoomMutation(c.config, OpDelete)
+	return &AvailableRoomDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AvailableRoomClient) DeleteOne(ar *AvailableRoom) *AvailableRoomDeleteOne {
+	return c.DeleteOneID(ar.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *AvailableRoomClient) DeleteOneID(id int) *AvailableRoomDeleteOne {
+	builder := c.Delete().Where(availableroom.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AvailableRoomDeleteOne{builder}
+}
+
+// Query returns a query builder for AvailableRoom.
+func (c *AvailableRoomClient) Query() *AvailableRoomQuery {
+	return &AvailableRoomQuery{
+		config: c.config,
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a AvailableRoom entity by its id.
+func (c *AvailableRoomClient) Get(ctx context.Context, id int) (*AvailableRoom, error) {
+	return c.Query().Where(availableroom.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AvailableRoomClient) GetX(ctx context.Context, id int) *AvailableRoom {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryRooms queries the rooms edge of a AvailableRoom.
+func (c *AvailableRoomClient) QueryRooms(ar *AvailableRoom) *RoomQuery {
+	query := (&RoomClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := ar.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(availableroom.Table, availableroom.FieldID, id),
+			sqlgraph.To(room.Table, room.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, availableroom.RoomsTable, availableroom.RoomsColumn),
+		)
+		fromV = sqlgraph.Neighbors(ar.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *AvailableRoomClient) Hooks() []Hook {
+	return c.hooks.AvailableRoom
+}
+
+// Interceptors returns the client interceptors.
+func (c *AvailableRoomClient) Interceptors() []Interceptor {
+	return c.inters.AvailableRoom
+}
+
+func (c *AvailableRoomClient) mutate(ctx context.Context, m *AvailableRoomMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&AvailableRoomCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&AvailableRoomUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&AvailableRoomUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&AvailableRoomDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown AvailableRoom mutation op: %q", m.Op())
 	}
 }
 
@@ -179,13 +354,9 @@ func (c *BookingClient) Update() *BookingUpdate {
 
 // UpdateOne returns an update builder for the given entity.
 func (c *BookingClient) UpdateOne(b *Booking) *BookingUpdateOne {
-	mutation := newBookingMutation(c.config, OpUpdateOne, withBooking(b))
-	return &BookingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *BookingClient) UpdateOneID(id int) *BookingUpdateOne {
-	mutation := newBookingMutation(c.config, OpUpdateOne, withBookingID(id))
+	mutation := newBookingMutation(c.config, OpUpdateOne)
+	mutation.profile = &b.ProfileID
+	mutation.room = &b.RoomID
 	return &BookingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
@@ -193,19 +364,6 @@ func (c *BookingClient) UpdateOneID(id int) *BookingUpdateOne {
 func (c *BookingClient) Delete() *BookingDelete {
 	mutation := newBookingMutation(c.config, OpDelete)
 	return &BookingDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *BookingClient) DeleteOne(b *Booking) *BookingDeleteOne {
-	return c.DeleteOneID(b.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *BookingClient) DeleteOneID(id int) *BookingDeleteOne {
-	builder := c.Delete().Where(booking.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &BookingDeleteOne{builder}
 }
 
 // Query returns a query builder for Booking.
@@ -216,18 +374,18 @@ func (c *BookingClient) Query() *BookingQuery {
 	}
 }
 
-// Get returns a Booking entity by its id.
-func (c *BookingClient) Get(ctx context.Context, id int) (*Booking, error) {
-	return c.Query().Where(booking.ID(id)).Only(ctx)
+// QueryProfile queries the profile edge of a Booking.
+func (c *BookingClient) QueryProfile(b *Booking) *ProfileQuery {
+	return c.Query().
+		Where(booking.ProfileID(b.ProfileID), booking.RoomID(b.RoomID)).
+		QueryProfile()
 }
 
-// GetX is like Get, but panics if an error occurs.
-func (c *BookingClient) GetX(ctx context.Context, id int) *Booking {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
+// QueryRoom queries the room edge of a Booking.
+func (c *BookingClient) QueryRoom(b *Booking) *RoomQuery {
+	return c.Query().
+		Where(booking.ProfileID(b.ProfileID), booking.RoomID(b.RoomID)).
+		QueryRoom()
 }
 
 // Hooks returns the client hooks.
@@ -252,5 +410,451 @@ func (c *BookingClient) mutate(ctx context.Context, m *BookingMutation) (Value, 
 		return (&BookingDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Booking mutation op: %q", m.Op())
+	}
+}
+
+// FriendClient is a client for the Friend schema.
+type FriendClient struct {
+	config
+}
+
+// NewFriendClient returns a client for the Friend from the given config.
+func NewFriendClient(c config) *FriendClient {
+	return &FriendClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `friend.Hooks(f(g(h())))`.
+func (c *FriendClient) Use(hooks ...Hook) {
+	c.hooks.Friend = append(c.hooks.Friend, hooks...)
+}
+
+// Use adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `friend.Intercept(f(g(h())))`.
+func (c *FriendClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Friend = append(c.inters.Friend, interceptors...)
+}
+
+// Create returns a builder for creating a Friend entity.
+func (c *FriendClient) Create() *FriendCreate {
+	mutation := newFriendMutation(c.config, OpCreate)
+	return &FriendCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Friend entities.
+func (c *FriendClient) CreateBulk(builders ...*FriendCreate) *FriendCreateBulk {
+	return &FriendCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Friend.
+func (c *FriendClient) Update() *FriendUpdate {
+	mutation := newFriendMutation(c.config, OpUpdate)
+	return &FriendUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *FriendClient) UpdateOne(f *Friend) *FriendUpdateOne {
+	mutation := newFriendMutation(c.config, OpUpdateOne)
+	mutation.profile = &f.ProfileID
+	mutation.friend = &f.FriendID
+	return &FriendUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Friend.
+func (c *FriendClient) Delete() *FriendDelete {
+	mutation := newFriendMutation(c.config, OpDelete)
+	return &FriendDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Query returns a query builder for Friend.
+func (c *FriendClient) Query() *FriendQuery {
+	return &FriendQuery{
+		config: c.config,
+		inters: c.Interceptors(),
+	}
+}
+
+// QueryProfile queries the profile edge of a Friend.
+func (c *FriendClient) QueryProfile(f *Friend) *ProfileQuery {
+	return c.Query().
+		Where(friend.ProfileID(f.ProfileID), friend.FriendID(f.FriendID)).
+		QueryProfile()
+}
+
+// QueryFriend queries the friend edge of a Friend.
+func (c *FriendClient) QueryFriend(f *Friend) *ProfileQuery {
+	return c.Query().
+		Where(friend.ProfileID(f.ProfileID), friend.FriendID(f.FriendID)).
+		QueryFriend()
+}
+
+// Hooks returns the client hooks.
+func (c *FriendClient) Hooks() []Hook {
+	return c.hooks.Friend
+}
+
+// Interceptors returns the client interceptors.
+func (c *FriendClient) Interceptors() []Interceptor {
+	return c.inters.Friend
+}
+
+func (c *FriendClient) mutate(ctx context.Context, m *FriendMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&FriendCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&FriendUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&FriendUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&FriendDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Friend mutation op: %q", m.Op())
+	}
+}
+
+// ProfileClient is a client for the Profile schema.
+type ProfileClient struct {
+	config
+}
+
+// NewProfileClient returns a client for the Profile from the given config.
+func NewProfileClient(c config) *ProfileClient {
+	return &ProfileClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `profile.Hooks(f(g(h())))`.
+func (c *ProfileClient) Use(hooks ...Hook) {
+	c.hooks.Profile = append(c.hooks.Profile, hooks...)
+}
+
+// Use adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `profile.Intercept(f(g(h())))`.
+func (c *ProfileClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Profile = append(c.inters.Profile, interceptors...)
+}
+
+// Create returns a builder for creating a Profile entity.
+func (c *ProfileClient) Create() *ProfileCreate {
+	mutation := newProfileMutation(c.config, OpCreate)
+	return &ProfileCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Profile entities.
+func (c *ProfileClient) CreateBulk(builders ...*ProfileCreate) *ProfileCreateBulk {
+	return &ProfileCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Profile.
+func (c *ProfileClient) Update() *ProfileUpdate {
+	mutation := newProfileMutation(c.config, OpUpdate)
+	return &ProfileUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ProfileClient) UpdateOne(pr *Profile) *ProfileUpdateOne {
+	mutation := newProfileMutation(c.config, OpUpdateOne, withProfile(pr))
+	return &ProfileUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ProfileClient) UpdateOneID(id uuid.UUID) *ProfileUpdateOne {
+	mutation := newProfileMutation(c.config, OpUpdateOne, withProfileID(id))
+	return &ProfileUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Profile.
+func (c *ProfileClient) Delete() *ProfileDelete {
+	mutation := newProfileMutation(c.config, OpDelete)
+	return &ProfileDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ProfileClient) DeleteOne(pr *Profile) *ProfileDeleteOne {
+	return c.DeleteOneID(pr.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ProfileClient) DeleteOneID(id uuid.UUID) *ProfileDeleteOne {
+	builder := c.Delete().Where(profile.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ProfileDeleteOne{builder}
+}
+
+// Query returns a query builder for Profile.
+func (c *ProfileClient) Query() *ProfileQuery {
+	return &ProfileQuery{
+		config: c.config,
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Profile entity by its id.
+func (c *ProfileClient) Get(ctx context.Context, id uuid.UUID) (*Profile, error) {
+	return c.Query().Where(profile.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ProfileClient) GetX(ctx context.Context, id uuid.UUID) *Profile {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryFriends queries the friends edge of a Profile.
+func (c *ProfileClient) QueryFriends(pr *Profile) *ProfileQuery {
+	query := (&ProfileClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(profile.Table, profile.FieldID, id),
+			sqlgraph.To(profile.Table, profile.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, profile.FriendsTable, profile.FriendsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryBookings queries the bookings edge of a Profile.
+func (c *ProfileClient) QueryBookings(pr *Profile) *RoomQuery {
+	query := (&RoomClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(profile.Table, profile.FieldID, id),
+			sqlgraph.To(room.Table, room.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, profile.BookingsTable, profile.BookingsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryFriendsData queries the friends_data edge of a Profile.
+func (c *ProfileClient) QueryFriendsData(pr *Profile) *FriendQuery {
+	query := (&FriendClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(profile.Table, profile.FieldID, id),
+			sqlgraph.To(friend.Table, friend.ProfileColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, profile.FriendsDataTable, profile.FriendsDataColumn),
+		)
+		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryBookingsData queries the bookings_data edge of a Profile.
+func (c *ProfileClient) QueryBookingsData(pr *Profile) *BookingQuery {
+	query := (&BookingClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(profile.Table, profile.FieldID, id),
+			sqlgraph.To(booking.Table, booking.ProfileColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, profile.BookingsDataTable, profile.BookingsDataColumn),
+		)
+		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ProfileClient) Hooks() []Hook {
+	return c.hooks.Profile
+}
+
+// Interceptors returns the client interceptors.
+func (c *ProfileClient) Interceptors() []Interceptor {
+	return c.inters.Profile
+}
+
+func (c *ProfileClient) mutate(ctx context.Context, m *ProfileMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ProfileCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ProfileUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ProfileUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ProfileDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Profile mutation op: %q", m.Op())
+	}
+}
+
+// RoomClient is a client for the Room schema.
+type RoomClient struct {
+	config
+}
+
+// NewRoomClient returns a client for the Room from the given config.
+func NewRoomClient(c config) *RoomClient {
+	return &RoomClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `room.Hooks(f(g(h())))`.
+func (c *RoomClient) Use(hooks ...Hook) {
+	c.hooks.Room = append(c.hooks.Room, hooks...)
+}
+
+// Use adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `room.Intercept(f(g(h())))`.
+func (c *RoomClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Room = append(c.inters.Room, interceptors...)
+}
+
+// Create returns a builder for creating a Room entity.
+func (c *RoomClient) Create() *RoomCreate {
+	mutation := newRoomMutation(c.config, OpCreate)
+	return &RoomCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Room entities.
+func (c *RoomClient) CreateBulk(builders ...*RoomCreate) *RoomCreateBulk {
+	return &RoomCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Room.
+func (c *RoomClient) Update() *RoomUpdate {
+	mutation := newRoomMutation(c.config, OpUpdate)
+	return &RoomUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *RoomClient) UpdateOne(r *Room) *RoomUpdateOne {
+	mutation := newRoomMutation(c.config, OpUpdateOne, withRoom(r))
+	return &RoomUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *RoomClient) UpdateOneID(id int) *RoomUpdateOne {
+	mutation := newRoomMutation(c.config, OpUpdateOne, withRoomID(id))
+	return &RoomUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Room.
+func (c *RoomClient) Delete() *RoomDelete {
+	mutation := newRoomMutation(c.config, OpDelete)
+	return &RoomDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *RoomClient) DeleteOne(r *Room) *RoomDeleteOne {
+	return c.DeleteOneID(r.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *RoomClient) DeleteOneID(id int) *RoomDeleteOne {
+	builder := c.Delete().Where(room.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &RoomDeleteOne{builder}
+}
+
+// Query returns a query builder for Room.
+func (c *RoomClient) Query() *RoomQuery {
+	return &RoomQuery{
+		config: c.config,
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Room entity by its id.
+func (c *RoomClient) Get(ctx context.Context, id int) (*Room, error) {
+	return c.Query().Where(room.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *RoomClient) GetX(ctx context.Context, id int) *Room {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryBookings queries the bookings edge of a Room.
+func (c *RoomClient) QueryBookings(r *Room) *ProfileQuery {
+	query := (&ProfileClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := r.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(room.Table, room.FieldID, id),
+			sqlgraph.To(profile.Table, profile.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, room.BookingsTable, room.BookingsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAvailability queries the availability edge of a Room.
+func (c *RoomClient) QueryAvailability(r *Room) *AvailableRoomQuery {
+	query := (&AvailableRoomClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := r.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(room.Table, room.FieldID, id),
+			sqlgraph.To(availableroom.Table, availableroom.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, room.AvailabilityTable, room.AvailabilityColumn),
+		)
+		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryBookingsData queries the bookings_data edge of a Room.
+func (c *RoomClient) QueryBookingsData(r *Room) *BookingQuery {
+	query := (&BookingClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := r.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(room.Table, room.FieldID, id),
+			sqlgraph.To(booking.Table, booking.RoomColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, room.BookingsDataTable, room.BookingsDataColumn),
+		)
+		fromV = sqlgraph.Neighbors(r.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *RoomClient) Hooks() []Hook {
+	return c.hooks.Room
+}
+
+// Interceptors returns the client interceptors.
+func (c *RoomClient) Interceptors() []Interceptor {
+	return c.inters.Room
+}
+
+func (c *RoomClient) mutate(ctx context.Context, m *RoomMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&RoomCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&RoomUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&RoomUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&RoomDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Room mutation op: %q", m.Op())
 	}
 }

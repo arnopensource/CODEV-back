@@ -9,19 +9,64 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/abc3354/CODEV-back/ent/booking"
+	"github.com/abc3354/CODEV-back/ent/profile"
+	"github.com/abc3354/CODEV-back/ent/room"
+	"github.com/google/uuid"
 )
 
 // Booking is the model entity for the Booking schema.
 type Booking struct {
 	config `json:"-"`
-	// ID of the ent.
-	ID int `json:"id,omitempty"`
-	// Name holds the value of the "name" field.
-	Name string `json:"name,omitempty"`
+	// ProfileID holds the value of the "profile_id" field.
+	ProfileID uuid.UUID `json:"profile_id,omitempty"`
+	// RoomID holds the value of the "room_id" field.
+	RoomID int `json:"room_id,omitempty"`
+	// Number holds the value of the "number" field.
+	Number int `json:"number,omitempty"`
 	// Start holds the value of the "start" field.
 	Start time.Time `json:"start,omitempty"`
 	// End holds the value of the "end" field.
 	End time.Time `json:"end,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the BookingQuery when eager-loading is set.
+	Edges BookingEdges `json:"edges"`
+}
+
+// BookingEdges holds the relations/edges for other nodes in the graph.
+type BookingEdges struct {
+	// Profile holds the value of the profile edge.
+	Profile *Profile `json:"profile,omitempty"`
+	// Room holds the value of the room edge.
+	Room *Room `json:"room,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [2]bool
+}
+
+// ProfileOrErr returns the Profile value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e BookingEdges) ProfileOrErr() (*Profile, error) {
+	if e.loadedTypes[0] {
+		if e.Profile == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: profile.Label}
+		}
+		return e.Profile, nil
+	}
+	return nil, &NotLoadedError{edge: "profile"}
+}
+
+// RoomOrErr returns the Room value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e BookingEdges) RoomOrErr() (*Room, error) {
+	if e.loadedTypes[1] {
+		if e.Room == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: room.Label}
+		}
+		return e.Room, nil
+	}
+	return nil, &NotLoadedError{edge: "room"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -29,12 +74,12 @@ func (*Booking) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case booking.FieldID:
+		case booking.FieldRoomID, booking.FieldNumber:
 			values[i] = new(sql.NullInt64)
-		case booking.FieldName:
-			values[i] = new(sql.NullString)
 		case booking.FieldStart, booking.FieldEnd:
 			values[i] = new(sql.NullTime)
+		case booking.FieldProfileID:
+			values[i] = new(uuid.UUID)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Booking", columns[i])
 		}
@@ -50,17 +95,23 @@ func (b *Booking) assignValues(columns []string, values []any) error {
 	}
 	for i := range columns {
 		switch columns[i] {
-		case booking.FieldID:
-			value, ok := values[i].(*sql.NullInt64)
-			if !ok {
-				return fmt.Errorf("unexpected type %T for field id", value)
+		case booking.FieldProfileID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field profile_id", values[i])
+			} else if value != nil {
+				b.ProfileID = *value
 			}
-			b.ID = int(value.Int64)
-		case booking.FieldName:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field name", values[i])
+		case booking.FieldRoomID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field room_id", values[i])
 			} else if value.Valid {
-				b.Name = value.String
+				b.RoomID = int(value.Int64)
+			}
+		case booking.FieldNumber:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field number", values[i])
+			} else if value.Valid {
+				b.Number = int(value.Int64)
 			}
 		case booking.FieldStart:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -77,6 +128,16 @@ func (b *Booking) assignValues(columns []string, values []any) error {
 		}
 	}
 	return nil
+}
+
+// QueryProfile queries the "profile" edge of the Booking entity.
+func (b *Booking) QueryProfile() *ProfileQuery {
+	return (&BookingClient{config: b.config}).QueryProfile(b)
+}
+
+// QueryRoom queries the "room" edge of the Booking entity.
+func (b *Booking) QueryRoom() *RoomQuery {
+	return (&BookingClient{config: b.config}).QueryRoom(b)
 }
 
 // Update returns a builder for updating this Booking.
@@ -101,9 +162,14 @@ func (b *Booking) Unwrap() *Booking {
 func (b *Booking) String() string {
 	var builder strings.Builder
 	builder.WriteString("Booking(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", b.ID))
-	builder.WriteString("name=")
-	builder.WriteString(b.Name)
+	builder.WriteString("profile_id=")
+	builder.WriteString(fmt.Sprintf("%v", b.ProfileID))
+	builder.WriteString(", ")
+	builder.WriteString("room_id=")
+	builder.WriteString(fmt.Sprintf("%v", b.RoomID))
+	builder.WriteString(", ")
+	builder.WriteString("number=")
+	builder.WriteString(fmt.Sprintf("%v", b.Number))
 	builder.WriteString(", ")
 	builder.WriteString("start=")
 	builder.WriteString(b.Start.Format(time.ANSIC))

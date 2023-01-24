@@ -8,35 +8,34 @@ import (
 	"github.com/google/uuid"
 )
 
-type Booking struct {
+type Friend struct {
 	ent.Schema
 }
 
-func (Booking) Annotations() []schema.Annotation {
+func (Friend) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		field.ID("profile_id", "room_id"),
+		field.ID("profile_id", "friend_id"),
 	}
 }
 
-func (Booking) Fields() []ent.Field {
+func (Friend) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("profile_id", uuid.New()),
-		field.Int("room_id"),
-		field.Int("number"),
-		field.Time("start"),
-		field.Time("end"),
+		field.UUID("friend_id", uuid.New()),
+		field.Time("since"),
+		field.Bool("accepted"),
 	}
 }
 
-func (Booking) Edges() []ent.Edge {
+func (Friend) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("profile", Profile.Type).
 			Required().
 			Unique().
 			Field("profile_id"),
-		edge.To("room", Room.Type).
+		edge.To("friend", Profile.Type).
 			Required().
 			Unique().
-			Field("room_id"),
+			Field("friend_id"),
 	}
 }

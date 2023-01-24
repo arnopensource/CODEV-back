@@ -9,21 +9,25 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"entgo.io/ent/schema/field"
 	"github.com/abc3354/CODEV-back/ent/booking"
 	"github.com/abc3354/CODEV-back/ent/predicate"
+	"github.com/abc3354/CODEV-back/ent/profile"
+	"github.com/abc3354/CODEV-back/ent/room"
+	"github.com/google/uuid"
 )
 
 // BookingQuery is the builder for querying Booking entities.
 type BookingQuery struct {
 	config
-	limit      *int
-	offset     *int
-	unique     *bool
-	order      []OrderFunc
-	fields     []string
-	inters     []Interceptor
-	predicates []predicate.Booking
+	limit       *int
+	offset      *int
+	unique      *bool
+	order       []OrderFunc
+	fields      []string
+	inters      []Interceptor
+	predicates  []predicate.Booking
+	withProfile *ProfileQuery
+	withRoom    *RoomQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -60,6 +64,50 @@ func (bq *BookingQuery) Order(o ...OrderFunc) *BookingQuery {
 	return bq
 }
 
+// QueryProfile chains the current query on the "profile" edge.
+func (bq *BookingQuery) QueryProfile() *ProfileQuery {
+	query := (&ProfileClient{config: bq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := bq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := bq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(booking.Table, booking.ProfileColumn, selector),
+			sqlgraph.To(profile.Table, profile.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, booking.ProfileTable, booking.ProfileColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(bq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryRoom chains the current query on the "room" edge.
+func (bq *BookingQuery) QueryRoom() *RoomQuery {
+	query := (&RoomClient{config: bq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := bq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := bq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(booking.Table, booking.RoomColumn, selector),
+			sqlgraph.To(room.Table, room.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, booking.RoomTable, booking.RoomColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(bq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // First returns the first Booking entity from the query.
 // Returns a *NotFoundError when no Booking was found.
 func (bq *BookingQuery) First(ctx context.Context) (*Booking, error) {
@@ -80,29 +128,6 @@ func (bq *BookingQuery) FirstX(ctx context.Context) *Booking {
 		panic(err)
 	}
 	return node
-}
-
-// FirstID returns the first Booking ID from the query.
-// Returns a *NotFoundError when no Booking ID was found.
-func (bq *BookingQuery) FirstID(ctx context.Context) (id int, err error) {
-	var ids []int
-	if ids, err = bq.Limit(1).IDs(newQueryContext(ctx, TypeBooking, "FirstID")); err != nil {
-		return
-	}
-	if len(ids) == 0 {
-		err = &NotFoundError{booking.Label}
-		return
-	}
-	return ids[0], nil
-}
-
-// FirstIDX is like FirstID, but panics if an error occurs.
-func (bq *BookingQuery) FirstIDX(ctx context.Context) int {
-	id, err := bq.FirstID(ctx)
-	if err != nil && !IsNotFound(err) {
-		panic(err)
-	}
-	return id
 }
 
 // Only returns a single Booking entity found by the query, ensuring it only returns one.
@@ -132,34 +157,6 @@ func (bq *BookingQuery) OnlyX(ctx context.Context) *Booking {
 	return node
 }
 
-// OnlyID is like Only, but returns the only Booking ID in the query.
-// Returns a *NotSingularError when more than one Booking ID is found.
-// Returns a *NotFoundError when no entities are found.
-func (bq *BookingQuery) OnlyID(ctx context.Context) (id int, err error) {
-	var ids []int
-	if ids, err = bq.Limit(2).IDs(newQueryContext(ctx, TypeBooking, "OnlyID")); err != nil {
-		return
-	}
-	switch len(ids) {
-	case 1:
-		id = ids[0]
-	case 0:
-		err = &NotFoundError{booking.Label}
-	default:
-		err = &NotSingularError{booking.Label}
-	}
-	return
-}
-
-// OnlyIDX is like OnlyID, but panics if an error occurs.
-func (bq *BookingQuery) OnlyIDX(ctx context.Context) int {
-	id, err := bq.OnlyID(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return id
-}
-
 // All executes the query and returns a list of Bookings.
 func (bq *BookingQuery) All(ctx context.Context) ([]*Booking, error) {
 	ctx = newQueryContext(ctx, TypeBooking, "All")
@@ -177,25 +174,6 @@ func (bq *BookingQuery) AllX(ctx context.Context) []*Booking {
 		panic(err)
 	}
 	return nodes
-}
-
-// IDs executes the query and returns a list of Booking IDs.
-func (bq *BookingQuery) IDs(ctx context.Context) ([]int, error) {
-	var ids []int
-	ctx = newQueryContext(ctx, TypeBooking, "IDs")
-	if err := bq.Select(booking.FieldID).Scan(ctx, &ids); err != nil {
-		return nil, err
-	}
-	return ids, nil
-}
-
-// IDsX is like IDs, but panics if an error occurs.
-func (bq *BookingQuery) IDsX(ctx context.Context) []int {
-	ids, err := bq.IDs(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return ids
 }
 
 // Count returns the count of the given query.
@@ -219,7 +197,7 @@ func (bq *BookingQuery) CountX(ctx context.Context) int {
 // Exist returns true if the query has elements in the graph.
 func (bq *BookingQuery) Exist(ctx context.Context) (bool, error) {
 	ctx = newQueryContext(ctx, TypeBooking, "Exist")
-	switch _, err := bq.FirstID(ctx); {
+	switch _, err := bq.First(ctx); {
 	case IsNotFound(err):
 		return false, nil
 	case err != nil:
@@ -245,17 +223,41 @@ func (bq *BookingQuery) Clone() *BookingQuery {
 		return nil
 	}
 	return &BookingQuery{
-		config:     bq.config,
-		limit:      bq.limit,
-		offset:     bq.offset,
-		order:      append([]OrderFunc{}, bq.order...),
-		inters:     append([]Interceptor{}, bq.inters...),
-		predicates: append([]predicate.Booking{}, bq.predicates...),
+		config:      bq.config,
+		limit:       bq.limit,
+		offset:      bq.offset,
+		order:       append([]OrderFunc{}, bq.order...),
+		inters:      append([]Interceptor{}, bq.inters...),
+		predicates:  append([]predicate.Booking{}, bq.predicates...),
+		withProfile: bq.withProfile.Clone(),
+		withRoom:    bq.withRoom.Clone(),
 		// clone intermediate query.
 		sql:    bq.sql.Clone(),
 		path:   bq.path,
 		unique: bq.unique,
 	}
+}
+
+// WithProfile tells the query-builder to eager-load the nodes that are connected to
+// the "profile" edge. The optional arguments are used to configure the query builder of the edge.
+func (bq *BookingQuery) WithProfile(opts ...func(*ProfileQuery)) *BookingQuery {
+	query := (&ProfileClient{config: bq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	bq.withProfile = query
+	return bq
+}
+
+// WithRoom tells the query-builder to eager-load the nodes that are connected to
+// the "room" edge. The optional arguments are used to configure the query builder of the edge.
+func (bq *BookingQuery) WithRoom(opts ...func(*RoomQuery)) *BookingQuery {
+	query := (&RoomClient{config: bq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	bq.withRoom = query
+	return bq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -264,12 +266,12 @@ func (bq *BookingQuery) Clone() *BookingQuery {
 // Example:
 //
 //	var v []struct {
-//		Name string `json:"name,omitempty"`
+//		ProfileID uuid.UUID `json:"profile_id,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.Booking.Query().
-//		GroupBy(booking.FieldName).
+//		GroupBy(booking.FieldProfileID).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (bq *BookingQuery) GroupBy(field string, fields ...string) *BookingGroupBy {
@@ -287,11 +289,11 @@ func (bq *BookingQuery) GroupBy(field string, fields ...string) *BookingGroupBy 
 // Example:
 //
 //	var v []struct {
-//		Name string `json:"name,omitempty"`
+//		ProfileID uuid.UUID `json:"profile_id,omitempty"`
 //	}
 //
 //	client.Booking.Query().
-//		Select(booking.FieldName).
+//		Select(booking.FieldProfileID).
 //		Scan(ctx, &v)
 func (bq *BookingQuery) Select(fields ...string) *BookingSelect {
 	bq.fields = append(bq.fields, fields...)
@@ -334,8 +336,12 @@ func (bq *BookingQuery) prepareQuery(ctx context.Context) error {
 
 func (bq *BookingQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Booking, error) {
 	var (
-		nodes = []*Booking{}
-		_spec = bq.querySpec()
+		nodes       = []*Booking{}
+		_spec       = bq.querySpec()
+		loadedTypes = [2]bool{
+			bq.withProfile != nil,
+			bq.withRoom != nil,
+		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Booking).scanValues(nil, columns)
@@ -343,6 +349,7 @@ func (bq *BookingQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Book
 	_spec.Assign = func(columns []string, values []any) error {
 		node := &Booking{config: bq.config}
 		nodes = append(nodes, node)
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	for i := range hooks {
@@ -354,15 +361,78 @@ func (bq *BookingQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Book
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := bq.withProfile; query != nil {
+		if err := bq.loadProfile(ctx, query, nodes, nil,
+			func(n *Booking, e *Profile) { n.Edges.Profile = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := bq.withRoom; query != nil {
+		if err := bq.loadRoom(ctx, query, nodes, nil,
+			func(n *Booking, e *Room) { n.Edges.Room = e }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
+}
+
+func (bq *BookingQuery) loadProfile(ctx context.Context, query *ProfileQuery, nodes []*Booking, init func(*Booking), assign func(*Booking, *Profile)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Booking)
+	for i := range nodes {
+		fk := nodes[i].ProfileID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	query.Where(profile.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "profile_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (bq *BookingQuery) loadRoom(ctx context.Context, query *RoomQuery, nodes []*Booking, init func(*Booking), assign func(*Booking, *Room)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*Booking)
+	for i := range nodes {
+		fk := nodes[i].RoomID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	query.Where(room.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "room_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
 }
 
 func (bq *BookingQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := bq.querySpec()
-	_spec.Node.Columns = bq.fields
-	if len(bq.fields) > 0 {
-		_spec.Unique = bq.unique != nil && *bq.unique
-	}
+	_spec.Unique = false
+	_spec.Node.Columns = nil
 	return sqlgraph.CountNodes(ctx, bq.driver, _spec)
 }
 
@@ -371,10 +441,6 @@ func (bq *BookingQuery) querySpec() *sqlgraph.QuerySpec {
 		Node: &sqlgraph.NodeSpec{
 			Table:   booking.Table,
 			Columns: booking.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: booking.FieldID,
-			},
 		},
 		From:   bq.sql,
 		Unique: true,
@@ -384,11 +450,8 @@ func (bq *BookingQuery) querySpec() *sqlgraph.QuerySpec {
 	}
 	if fields := bq.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
-		_spec.Node.Columns = append(_spec.Node.Columns, booking.FieldID)
 		for i := range fields {
-			if fields[i] != booking.FieldID {
-				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
-			}
+			_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 		}
 	}
 	if ps := bq.predicates; len(ps) > 0 {

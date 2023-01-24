@@ -27,10 +27,18 @@ type config struct {
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Booking []ent.Hook
+		AvailableRoom []ent.Hook
+		Booking       []ent.Hook
+		Friend        []ent.Hook
+		Profile       []ent.Hook
+		Room          []ent.Hook
 	}
 	inters struct {
-		Booking []ent.Interceptor
+		AvailableRoom []ent.Interceptor
+		Booking       []ent.Interceptor
+		Friend        []ent.Interceptor
+		Profile       []ent.Interceptor
+		Room          []ent.Interceptor
 	}
 )
 

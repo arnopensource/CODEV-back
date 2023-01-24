@@ -1,11 +1,10 @@
 package main
 
 import (
-	"github.com/abc3354/CODEV-back/services/ade"
 	"log"
-	"time"
 
 	"github.com/abc3354/CODEV-back/handlers"
+	"github.com/abc3354/CODEV-back/services/ade"
 	"github.com/abc3354/CODEV-back/services/database"
 	"github.com/abc3354/CODEV-back/services/ent"
 
@@ -20,12 +19,9 @@ func main() {
 
 	r := gin.Default()
 
-	r.GET("/", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "Hello World!",
-		})
-	})
+	r.GET("/", handlers.Home)
 	r.GET("/ping", handlers.Ping)
+	r.GET("/ping/ent", handlers.PingEnt)
 
 	r.POST("/auth/login", handlers.Login)
 	r.POST("/auth/signup", handlers.Signup)
@@ -34,20 +30,6 @@ func main() {
 	r.GET("/auth/check", handlers.CheckToken)
 
 	r.GET("/rooms/empty", handlers.GetEmptyRooms)
-
-	r.GET("/test", func(c *gin.Context) {
-		booking, err := ent.Get().Booking.
-			Create().
-			SetName("204").
-			SetStart(time.Now()).
-			SetEnd(time.Now().Add(time.Hour)).
-			Save(c)
-		if err != nil {
-			c.AbortWithError(500, err)
-			return
-		}
-		c.JSON(200, booking)
-	})
 
 	if err := r.Run(); err != nil {
 		log.Fatal(err)

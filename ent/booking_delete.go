@@ -7,7 +7,6 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"entgo.io/ent/schema/field"
 	"github.com/abc3354/CODEV-back/ent/booking"
 	"github.com/abc3354/CODEV-back/ent/predicate"
 )
@@ -43,10 +42,6 @@ func (bd *BookingDelete) sqlExec(ctx context.Context) (int, error) {
 	_spec := &sqlgraph.DeleteSpec{
 		Node: &sqlgraph.NodeSpec{
 			Table: booking.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: booking.FieldID,
-			},
 		},
 	}
 	if ps := bd.mutation.predicates; len(ps) > 0 {

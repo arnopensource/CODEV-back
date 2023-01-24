@@ -11,6 +11,9 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/abc3354/CODEV-back/ent/booking"
+	"github.com/abc3354/CODEV-back/ent/profile"
+	"github.com/abc3354/CODEV-back/ent/room"
+	"github.com/google/uuid"
 )
 
 // BookingCreate is the builder for creating a Booking entity.
@@ -20,9 +23,21 @@ type BookingCreate struct {
 	hooks    []Hook
 }
 
-// SetName sets the "name" field.
-func (bc *BookingCreate) SetName(s string) *BookingCreate {
-	bc.mutation.SetName(s)
+// SetProfileID sets the "profile_id" field.
+func (bc *BookingCreate) SetProfileID(u uuid.UUID) *BookingCreate {
+	bc.mutation.SetProfileID(u)
+	return bc
+}
+
+// SetRoomID sets the "room_id" field.
+func (bc *BookingCreate) SetRoomID(i int) *BookingCreate {
+	bc.mutation.SetRoomID(i)
+	return bc
+}
+
+// SetNumber sets the "number" field.
+func (bc *BookingCreate) SetNumber(i int) *BookingCreate {
+	bc.mutation.SetNumber(i)
 	return bc
 }
 
@@ -36,6 +51,16 @@ func (bc *BookingCreate) SetStart(t time.Time) *BookingCreate {
 func (bc *BookingCreate) SetEnd(t time.Time) *BookingCreate {
 	bc.mutation.SetEnd(t)
 	return bc
+}
+
+// SetProfile sets the "profile" edge to the Profile entity.
+func (bc *BookingCreate) SetProfile(p *Profile) *BookingCreate {
+	return bc.SetProfileID(p.ID)
+}
+
+// SetRoom sets the "room" edge to the Room entity.
+func (bc *BookingCreate) SetRoom(r *Room) *BookingCreate {
+	return bc.SetRoomID(r.ID)
 }
 
 // Mutation returns the BookingMutation object of the builder.
@@ -72,14 +97,26 @@ func (bc *BookingCreate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (bc *BookingCreate) check() error {
-	if _, ok := bc.mutation.Name(); !ok {
-		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Booking.name"`)}
+	if _, ok := bc.mutation.ProfileID(); !ok {
+		return &ValidationError{Name: "profile_id", err: errors.New(`ent: missing required field "Booking.profile_id"`)}
+	}
+	if _, ok := bc.mutation.RoomID(); !ok {
+		return &ValidationError{Name: "room_id", err: errors.New(`ent: missing required field "Booking.room_id"`)}
+	}
+	if _, ok := bc.mutation.Number(); !ok {
+		return &ValidationError{Name: "number", err: errors.New(`ent: missing required field "Booking.number"`)}
 	}
 	if _, ok := bc.mutation.Start(); !ok {
 		return &ValidationError{Name: "start", err: errors.New(`ent: missing required field "Booking.start"`)}
 	}
 	if _, ok := bc.mutation.End(); !ok {
 		return &ValidationError{Name: "end", err: errors.New(`ent: missing required field "Booking.end"`)}
+	}
+	if _, ok := bc.mutation.ProfileID(); !ok {
+		return &ValidationError{Name: "profile", err: errors.New(`ent: missing required edge "Booking.profile"`)}
+	}
+	if _, ok := bc.mutation.RoomID(); !ok {
+		return &ValidationError{Name: "room", err: errors.New(`ent: missing required edge "Booking.room"`)}
 	}
 	return nil
 }
@@ -95,10 +132,6 @@ func (bc *BookingCreate) sqlSave(ctx context.Context) (*Booking, error) {
 		}
 		return nil, err
 	}
-	id := _spec.ID.Value.(int64)
-	_node.ID = int(id)
-	bc.mutation.id = &_node.ID
-	bc.mutation.done = true
 	return _node, nil
 }
 
@@ -107,15 +140,11 @@ func (bc *BookingCreate) createSpec() (*Booking, *sqlgraph.CreateSpec) {
 		_node = &Booking{config: bc.config}
 		_spec = &sqlgraph.CreateSpec{
 			Table: booking.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
-				Column: booking.FieldID,
-			},
 		}
 	)
-	if value, ok := bc.mutation.Name(); ok {
-		_spec.SetField(booking.FieldName, field.TypeString, value)
-		_node.Name = value
+	if value, ok := bc.mutation.Number(); ok {
+		_spec.SetField(booking.FieldNumber, field.TypeInt, value)
+		_node.Number = value
 	}
 	if value, ok := bc.mutation.Start(); ok {
 		_spec.SetField(booking.FieldStart, field.TypeTime, value)
@@ -124,6 +153,46 @@ func (bc *BookingCreate) createSpec() (*Booking, *sqlgraph.CreateSpec) {
 	if value, ok := bc.mutation.End(); ok {
 		_spec.SetField(booking.FieldEnd, field.TypeTime, value)
 		_node.End = value
+	}
+	if nodes := bc.mutation.ProfileIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   booking.ProfileTable,
+			Columns: []string{booking.ProfileColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: profile.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.ProfileID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := bc.mutation.RoomIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   booking.RoomTable,
+			Columns: []string{booking.RoomColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: room.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.RoomID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }
@@ -166,11 +235,6 @@ func (bcb *BookingCreateBulk) Save(ctx context.Context) ([]*Booking, error) {
 				}
 				if err != nil {
 					return nil, err
-				}
-				mutation.id = &nodes[i].ID
-				if specs[i].ID.Value != nil {
-					id := specs[i].ID.Value.(int64)
-					nodes[i].ID = int(id)
 				}
 				mutation.done = true
 				return nodes[i], nil

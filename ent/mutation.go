@@ -9,8 +9,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/abc3354/CODEV-back/ent/availableroom"
 	"github.com/abc3354/CODEV-back/ent/booking"
+	"github.com/abc3354/CODEV-back/ent/friend"
 	"github.com/abc3354/CODEV-back/ent/predicate"
+	"github.com/abc3354/CODEV-back/ent/profile"
+	"github.com/abc3354/CODEV-back/ent/room"
+	"github.com/google/uuid"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
@@ -25,22 +30,477 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeBooking = "Booking"
+	TypeAvailableRoom = "AvailableRoom"
+	TypeBooking       = "Booking"
+	TypeFriend        = "Friend"
+	TypeProfile       = "Profile"
+	TypeRoom          = "Room"
 )
 
-// BookingMutation represents an operation that mutates the Booking nodes in the graph.
-type BookingMutation struct {
+// AvailableRoomMutation represents an operation that mutates the AvailableRoom nodes in the graph.
+type AvailableRoomMutation struct {
 	config
 	op            Op
 	typ           string
 	id            *int
-	name          *string
 	start         *time.Time
 	end           *time.Time
 	clearedFields map[string]struct{}
+	rooms         *int
+	clearedrooms  bool
 	done          bool
-	oldValue      func(context.Context) (*Booking, error)
-	predicates    []predicate.Booking
+	oldValue      func(context.Context) (*AvailableRoom, error)
+	predicates    []predicate.AvailableRoom
+}
+
+var _ ent.Mutation = (*AvailableRoomMutation)(nil)
+
+// availableroomOption allows management of the mutation configuration using functional options.
+type availableroomOption func(*AvailableRoomMutation)
+
+// newAvailableRoomMutation creates new mutation for the AvailableRoom entity.
+func newAvailableRoomMutation(c config, op Op, opts ...availableroomOption) *AvailableRoomMutation {
+	m := &AvailableRoomMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeAvailableRoom,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withAvailableRoomID sets the ID field of the mutation.
+func withAvailableRoomID(id int) availableroomOption {
+	return func(m *AvailableRoomMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *AvailableRoom
+		)
+		m.oldValue = func(ctx context.Context) (*AvailableRoom, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().AvailableRoom.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withAvailableRoom sets the old AvailableRoom of the mutation.
+func withAvailableRoom(node *AvailableRoom) availableroomOption {
+	return func(m *AvailableRoomMutation) {
+		m.oldValue = func(context.Context) (*AvailableRoom, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m AvailableRoomMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m AvailableRoomMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *AvailableRoomMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *AvailableRoomMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().AvailableRoom.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetStart sets the "start" field.
+func (m *AvailableRoomMutation) SetStart(t time.Time) {
+	m.start = &t
+}
+
+// Start returns the value of the "start" field in the mutation.
+func (m *AvailableRoomMutation) Start() (r time.Time, exists bool) {
+	v := m.start
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStart returns the old "start" field's value of the AvailableRoom entity.
+// If the AvailableRoom object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AvailableRoomMutation) OldStart(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStart is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStart requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStart: %w", err)
+	}
+	return oldValue.Start, nil
+}
+
+// ResetStart resets all changes to the "start" field.
+func (m *AvailableRoomMutation) ResetStart() {
+	m.start = nil
+}
+
+// SetEnd sets the "end" field.
+func (m *AvailableRoomMutation) SetEnd(t time.Time) {
+	m.end = &t
+}
+
+// End returns the value of the "end" field in the mutation.
+func (m *AvailableRoomMutation) End() (r time.Time, exists bool) {
+	v := m.end
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEnd returns the old "end" field's value of the AvailableRoom entity.
+// If the AvailableRoom object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AvailableRoomMutation) OldEnd(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEnd is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEnd requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEnd: %w", err)
+	}
+	return oldValue.End, nil
+}
+
+// ResetEnd resets all changes to the "end" field.
+func (m *AvailableRoomMutation) ResetEnd() {
+	m.end = nil
+}
+
+// SetRoomsID sets the "rooms" edge to the Room entity by id.
+func (m *AvailableRoomMutation) SetRoomsID(id int) {
+	m.rooms = &id
+}
+
+// ClearRooms clears the "rooms" edge to the Room entity.
+func (m *AvailableRoomMutation) ClearRooms() {
+	m.clearedrooms = true
+}
+
+// RoomsCleared reports if the "rooms" edge to the Room entity was cleared.
+func (m *AvailableRoomMutation) RoomsCleared() bool {
+	return m.clearedrooms
+}
+
+// RoomsID returns the "rooms" edge ID in the mutation.
+func (m *AvailableRoomMutation) RoomsID() (id int, exists bool) {
+	if m.rooms != nil {
+		return *m.rooms, true
+	}
+	return
+}
+
+// RoomsIDs returns the "rooms" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// RoomsID instead. It exists only for internal usage by the builders.
+func (m *AvailableRoomMutation) RoomsIDs() (ids []int) {
+	if id := m.rooms; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetRooms resets all changes to the "rooms" edge.
+func (m *AvailableRoomMutation) ResetRooms() {
+	m.rooms = nil
+	m.clearedrooms = false
+}
+
+// Where appends a list predicates to the AvailableRoomMutation builder.
+func (m *AvailableRoomMutation) Where(ps ...predicate.AvailableRoom) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the AvailableRoomMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *AvailableRoomMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.AvailableRoom, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *AvailableRoomMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *AvailableRoomMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (AvailableRoom).
+func (m *AvailableRoomMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *AvailableRoomMutation) Fields() []string {
+	fields := make([]string, 0, 2)
+	if m.start != nil {
+		fields = append(fields, availableroom.FieldStart)
+	}
+	if m.end != nil {
+		fields = append(fields, availableroom.FieldEnd)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *AvailableRoomMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case availableroom.FieldStart:
+		return m.Start()
+	case availableroom.FieldEnd:
+		return m.End()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *AvailableRoomMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case availableroom.FieldStart:
+		return m.OldStart(ctx)
+	case availableroom.FieldEnd:
+		return m.OldEnd(ctx)
+	}
+	return nil, fmt.Errorf("unknown AvailableRoom field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AvailableRoomMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case availableroom.FieldStart:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStart(v)
+		return nil
+	case availableroom.FieldEnd:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEnd(v)
+		return nil
+	}
+	return fmt.Errorf("unknown AvailableRoom field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *AvailableRoomMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *AvailableRoomMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AvailableRoomMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown AvailableRoom numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *AvailableRoomMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *AvailableRoomMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *AvailableRoomMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown AvailableRoom nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *AvailableRoomMutation) ResetField(name string) error {
+	switch name {
+	case availableroom.FieldStart:
+		m.ResetStart()
+		return nil
+	case availableroom.FieldEnd:
+		m.ResetEnd()
+		return nil
+	}
+	return fmt.Errorf("unknown AvailableRoom field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *AvailableRoomMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.rooms != nil {
+		edges = append(edges, availableroom.EdgeRooms)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *AvailableRoomMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case availableroom.EdgeRooms:
+		if id := m.rooms; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *AvailableRoomMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *AvailableRoomMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *AvailableRoomMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedrooms {
+		edges = append(edges, availableroom.EdgeRooms)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *AvailableRoomMutation) EdgeCleared(name string) bool {
+	switch name {
+	case availableroom.EdgeRooms:
+		return m.clearedrooms
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *AvailableRoomMutation) ClearEdge(name string) error {
+	switch name {
+	case availableroom.EdgeRooms:
+		m.ClearRooms()
+		return nil
+	}
+	return fmt.Errorf("unknown AvailableRoom unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *AvailableRoomMutation) ResetEdge(name string) error {
+	switch name {
+	case availableroom.EdgeRooms:
+		m.ResetRooms()
+		return nil
+	}
+	return fmt.Errorf("unknown AvailableRoom edge %s", name)
+}
+
+// BookingMutation represents an operation that mutates the Booking nodes in the graph.
+type BookingMutation struct {
+	config
+	op             Op
+	typ            string
+	number         *int
+	addnumber      *int
+	start          *time.Time
+	end            *time.Time
+	clearedFields  map[string]struct{}
+	profile        *uuid.UUID
+	clearedprofile bool
+	room           *int
+	clearedroom    bool
+	done           bool
+	oldValue       func(context.Context) (*Booking, error)
+	predicates     []predicate.Booking
 }
 
 var _ ent.Mutation = (*BookingMutation)(nil)
@@ -62,38 +522,6 @@ func newBookingMutation(c config, op Op, opts ...bookingOption) *BookingMutation
 	return m
 }
 
-// withBookingID sets the ID field of the mutation.
-func withBookingID(id int) bookingOption {
-	return func(m *BookingMutation) {
-		var (
-			err   error
-			once  sync.Once
-			value *Booking
-		)
-		m.oldValue = func(ctx context.Context) (*Booking, error) {
-			once.Do(func() {
-				if m.done {
-					err = errors.New("querying old values post mutation is not allowed")
-				} else {
-					value, err = m.Client().Booking.Get(ctx, id)
-				}
-			})
-			return value, err
-		}
-		m.id = &id
-	}
-}
-
-// withBooking sets the old Booking of the mutation.
-func withBooking(node *Booking) bookingOption {
-	return func(m *BookingMutation) {
-		m.oldValue = func(context.Context) (*Booking, error) {
-			return node, nil
-		}
-		m.id = &node.ID
-	}
-}
-
 // Client returns a new `ent.Client` from the mutation. If the mutation was
 // executed in a transaction (ent.Tx), a transactional client is returned.
 func (m BookingMutation) Client() *Client {
@@ -113,68 +541,81 @@ func (m BookingMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
-// ID returns the ID value in the mutation. Note that the ID is only available
-// if it was provided to the builder or after it was returned from the database.
-func (m *BookingMutation) ID() (id int, exists bool) {
-	if m.id == nil {
-		return
-	}
-	return *m.id, true
+// SetProfileID sets the "profile_id" field.
+func (m *BookingMutation) SetProfileID(u uuid.UUID) {
+	m.profile = &u
 }
 
-// IDs queries the database and returns the entity ids that match the mutation's predicate.
-// That means, if the mutation is applied within a transaction with an isolation level such
-// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
-// or updated by the mutation.
-func (m *BookingMutation) IDs(ctx context.Context) ([]int, error) {
-	switch {
-	case m.op.Is(OpUpdateOne | OpDeleteOne):
-		id, exists := m.ID()
-		if exists {
-			return []int{id}, nil
-		}
-		fallthrough
-	case m.op.Is(OpUpdate | OpDelete):
-		return m.Client().Booking.Query().Where(m.predicates...).IDs(ctx)
-	default:
-		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
-	}
-}
-
-// SetName sets the "name" field.
-func (m *BookingMutation) SetName(s string) {
-	m.name = &s
-}
-
-// Name returns the value of the "name" field in the mutation.
-func (m *BookingMutation) Name() (r string, exists bool) {
-	v := m.name
+// ProfileID returns the value of the "profile_id" field in the mutation.
+func (m *BookingMutation) ProfileID() (r uuid.UUID, exists bool) {
+	v := m.profile
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldName returns the old "name" field's value of the Booking entity.
-// If the Booking object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BookingMutation) OldName(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldName is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldName requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldName: %w", err)
-	}
-	return oldValue.Name, nil
+// ResetProfileID resets all changes to the "profile_id" field.
+func (m *BookingMutation) ResetProfileID() {
+	m.profile = nil
 }
 
-// ResetName resets all changes to the "name" field.
-func (m *BookingMutation) ResetName() {
-	m.name = nil
+// SetRoomID sets the "room_id" field.
+func (m *BookingMutation) SetRoomID(i int) {
+	m.room = &i
+}
+
+// RoomID returns the value of the "room_id" field in the mutation.
+func (m *BookingMutation) RoomID() (r int, exists bool) {
+	v := m.room
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRoomID resets all changes to the "room_id" field.
+func (m *BookingMutation) ResetRoomID() {
+	m.room = nil
+}
+
+// SetNumber sets the "number" field.
+func (m *BookingMutation) SetNumber(i int) {
+	m.number = &i
+	m.addnumber = nil
+}
+
+// Number returns the value of the "number" field in the mutation.
+func (m *BookingMutation) Number() (r int, exists bool) {
+	v := m.number
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// AddNumber adds i to the "number" field.
+func (m *BookingMutation) AddNumber(i int) {
+	if m.addnumber != nil {
+		*m.addnumber += i
+	} else {
+		m.addnumber = &i
+	}
+}
+
+// AddedNumber returns the value that was added to the "number" field in this mutation.
+func (m *BookingMutation) AddedNumber() (r int, exists bool) {
+	v := m.addnumber
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetNumber resets all changes to the "number" field.
+func (m *BookingMutation) ResetNumber() {
+	m.number = nil
+	m.addnumber = nil
 }
 
 // SetStart sets the "start" field.
@@ -189,23 +630,6 @@ func (m *BookingMutation) Start() (r time.Time, exists bool) {
 		return
 	}
 	return *v, true
-}
-
-// OldStart returns the old "start" field's value of the Booking entity.
-// If the Booking object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BookingMutation) OldStart(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldStart is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldStart requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldStart: %w", err)
-	}
-	return oldValue.Start, nil
 }
 
 // ResetStart resets all changes to the "start" field.
@@ -227,26 +651,61 @@ func (m *BookingMutation) End() (r time.Time, exists bool) {
 	return *v, true
 }
 
-// OldEnd returns the old "end" field's value of the Booking entity.
-// If the Booking object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *BookingMutation) OldEnd(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldEnd is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldEnd requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldEnd: %w", err)
-	}
-	return oldValue.End, nil
-}
-
 // ResetEnd resets all changes to the "end" field.
 func (m *BookingMutation) ResetEnd() {
 	m.end = nil
+}
+
+// ClearProfile clears the "profile" edge to the Profile entity.
+func (m *BookingMutation) ClearProfile() {
+	m.clearedprofile = true
+}
+
+// ProfileCleared reports if the "profile" edge to the Profile entity was cleared.
+func (m *BookingMutation) ProfileCleared() bool {
+	return m.clearedprofile
+}
+
+// ProfileIDs returns the "profile" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ProfileID instead. It exists only for internal usage by the builders.
+func (m *BookingMutation) ProfileIDs() (ids []uuid.UUID) {
+	if id := m.profile; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetProfile resets all changes to the "profile" edge.
+func (m *BookingMutation) ResetProfile() {
+	m.profile = nil
+	m.clearedprofile = false
+}
+
+// ClearRoom clears the "room" edge to the Room entity.
+func (m *BookingMutation) ClearRoom() {
+	m.clearedroom = true
+}
+
+// RoomCleared reports if the "room" edge to the Room entity was cleared.
+func (m *BookingMutation) RoomCleared() bool {
+	return m.clearedroom
+}
+
+// RoomIDs returns the "room" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// RoomID instead. It exists only for internal usage by the builders.
+func (m *BookingMutation) RoomIDs() (ids []int) {
+	if id := m.room; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetRoom resets all changes to the "room" edge.
+func (m *BookingMutation) ResetRoom() {
+	m.room = nil
+	m.clearedroom = false
 }
 
 // Where appends a list predicates to the BookingMutation builder.
@@ -283,9 +742,15 @@ func (m *BookingMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *BookingMutation) Fields() []string {
-	fields := make([]string, 0, 3)
-	if m.name != nil {
-		fields = append(fields, booking.FieldName)
+	fields := make([]string, 0, 5)
+	if m.profile != nil {
+		fields = append(fields, booking.FieldProfileID)
+	}
+	if m.room != nil {
+		fields = append(fields, booking.FieldRoomID)
+	}
+	if m.number != nil {
+		fields = append(fields, booking.FieldNumber)
 	}
 	if m.start != nil {
 		fields = append(fields, booking.FieldStart)
@@ -301,8 +766,12 @@ func (m *BookingMutation) Fields() []string {
 // schema.
 func (m *BookingMutation) Field(name string) (ent.Value, bool) {
 	switch name {
-	case booking.FieldName:
-		return m.Name()
+	case booking.FieldProfileID:
+		return m.ProfileID()
+	case booking.FieldRoomID:
+		return m.RoomID()
+	case booking.FieldNumber:
+		return m.Number()
 	case booking.FieldStart:
 		return m.Start()
 	case booking.FieldEnd:
@@ -315,15 +784,7 @@ func (m *BookingMutation) Field(name string) (ent.Value, bool) {
 // returned if the mutation operation is not UpdateOne, or the query to the
 // database failed.
 func (m *BookingMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
-	switch name {
-	case booking.FieldName:
-		return m.OldName(ctx)
-	case booking.FieldStart:
-		return m.OldStart(ctx)
-	case booking.FieldEnd:
-		return m.OldEnd(ctx)
-	}
-	return nil, fmt.Errorf("unknown Booking field %s", name)
+	return nil, errors.New("edge schema Booking does not support getting old values")
 }
 
 // SetField sets the value of a field with the given name. It returns an error if
@@ -331,12 +792,26 @@ func (m *BookingMutation) OldField(ctx context.Context, name string) (ent.Value,
 // type.
 func (m *BookingMutation) SetField(name string, value ent.Value) error {
 	switch name {
-	case booking.FieldName:
-		v, ok := value.(string)
+	case booking.FieldProfileID:
+		v, ok := value.(uuid.UUID)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetName(v)
+		m.SetProfileID(v)
+		return nil
+	case booking.FieldRoomID:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRoomID(v)
+		return nil
+	case booking.FieldNumber:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNumber(v)
 		return nil
 	case booking.FieldStart:
 		v, ok := value.(time.Time)
@@ -359,13 +834,21 @@ func (m *BookingMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *BookingMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	if m.addnumber != nil {
+		fields = append(fields, booking.FieldNumber)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *BookingMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case booking.FieldNumber:
+		return m.AddedNumber()
+	}
 	return nil, false
 }
 
@@ -374,6 +857,13 @@ func (m *BookingMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *BookingMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case booking.FieldNumber:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddNumber(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Booking numeric field %s", name)
 }
@@ -401,8 +891,14 @@ func (m *BookingMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *BookingMutation) ResetField(name string) error {
 	switch name {
-	case booking.FieldName:
-		m.ResetName()
+	case booking.FieldProfileID:
+		m.ResetProfileID()
+		return nil
+	case booking.FieldRoomID:
+		m.ResetRoomID()
+		return nil
+	case booking.FieldNumber:
+		m.ResetNumber()
 		return nil
 	case booking.FieldStart:
 		m.ResetStart()
@@ -416,19 +912,35 @@ func (m *BookingMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *BookingMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 2)
+	if m.profile != nil {
+		edges = append(edges, booking.EdgeProfile)
+	}
+	if m.room != nil {
+		edges = append(edges, booking.EdgeRoom)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *BookingMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case booking.EdgeProfile:
+		if id := m.profile; id != nil {
+			return []ent.Value{*id}
+		}
+	case booking.EdgeRoom:
+		if id := m.room; id != nil {
+			return []ent.Value{*id}
+		}
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *BookingMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 2)
 	return edges
 }
 
@@ -440,24 +952,1815 @@ func (m *BookingMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *BookingMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 2)
+	if m.clearedprofile {
+		edges = append(edges, booking.EdgeProfile)
+	}
+	if m.clearedroom {
+		edges = append(edges, booking.EdgeRoom)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *BookingMutation) EdgeCleared(name string) bool {
+	switch name {
+	case booking.EdgeProfile:
+		return m.clearedprofile
+	case booking.EdgeRoom:
+		return m.clearedroom
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *BookingMutation) ClearEdge(name string) error {
+	switch name {
+	case booking.EdgeProfile:
+		m.ClearProfile()
+		return nil
+	case booking.EdgeRoom:
+		m.ClearRoom()
+		return nil
+	}
 	return fmt.Errorf("unknown Booking unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *BookingMutation) ResetEdge(name string) error {
+	switch name {
+	case booking.EdgeProfile:
+		m.ResetProfile()
+		return nil
+	case booking.EdgeRoom:
+		m.ResetRoom()
+		return nil
+	}
 	return fmt.Errorf("unknown Booking edge %s", name)
+}
+
+// FriendMutation represents an operation that mutates the Friend nodes in the graph.
+type FriendMutation struct {
+	config
+	op             Op
+	typ            string
+	since          *time.Time
+	accepted       *bool
+	clearedFields  map[string]struct{}
+	profile        *uuid.UUID
+	clearedprofile bool
+	friend         *uuid.UUID
+	clearedfriend  bool
+	done           bool
+	oldValue       func(context.Context) (*Friend, error)
+	predicates     []predicate.Friend
+}
+
+var _ ent.Mutation = (*FriendMutation)(nil)
+
+// friendOption allows management of the mutation configuration using functional options.
+type friendOption func(*FriendMutation)
+
+// newFriendMutation creates new mutation for the Friend entity.
+func newFriendMutation(c config, op Op, opts ...friendOption) *FriendMutation {
+	m := &FriendMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeFriend,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m FriendMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m FriendMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetProfileID sets the "profile_id" field.
+func (m *FriendMutation) SetProfileID(u uuid.UUID) {
+	m.profile = &u
+}
+
+// ProfileID returns the value of the "profile_id" field in the mutation.
+func (m *FriendMutation) ProfileID() (r uuid.UUID, exists bool) {
+	v := m.profile
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetProfileID resets all changes to the "profile_id" field.
+func (m *FriendMutation) ResetProfileID() {
+	m.profile = nil
+}
+
+// SetFriendID sets the "friend_id" field.
+func (m *FriendMutation) SetFriendID(u uuid.UUID) {
+	m.friend = &u
+}
+
+// FriendID returns the value of the "friend_id" field in the mutation.
+func (m *FriendMutation) FriendID() (r uuid.UUID, exists bool) {
+	v := m.friend
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetFriendID resets all changes to the "friend_id" field.
+func (m *FriendMutation) ResetFriendID() {
+	m.friend = nil
+}
+
+// SetSince sets the "since" field.
+func (m *FriendMutation) SetSince(t time.Time) {
+	m.since = &t
+}
+
+// Since returns the value of the "since" field in the mutation.
+func (m *FriendMutation) Since() (r time.Time, exists bool) {
+	v := m.since
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSince resets all changes to the "since" field.
+func (m *FriendMutation) ResetSince() {
+	m.since = nil
+}
+
+// SetAccepted sets the "accepted" field.
+func (m *FriendMutation) SetAccepted(b bool) {
+	m.accepted = &b
+}
+
+// Accepted returns the value of the "accepted" field in the mutation.
+func (m *FriendMutation) Accepted() (r bool, exists bool) {
+	v := m.accepted
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAccepted resets all changes to the "accepted" field.
+func (m *FriendMutation) ResetAccepted() {
+	m.accepted = nil
+}
+
+// ClearProfile clears the "profile" edge to the Profile entity.
+func (m *FriendMutation) ClearProfile() {
+	m.clearedprofile = true
+}
+
+// ProfileCleared reports if the "profile" edge to the Profile entity was cleared.
+func (m *FriendMutation) ProfileCleared() bool {
+	return m.clearedprofile
+}
+
+// ProfileIDs returns the "profile" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ProfileID instead. It exists only for internal usage by the builders.
+func (m *FriendMutation) ProfileIDs() (ids []uuid.UUID) {
+	if id := m.profile; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetProfile resets all changes to the "profile" edge.
+func (m *FriendMutation) ResetProfile() {
+	m.profile = nil
+	m.clearedprofile = false
+}
+
+// ClearFriend clears the "friend" edge to the Profile entity.
+func (m *FriendMutation) ClearFriend() {
+	m.clearedfriend = true
+}
+
+// FriendCleared reports if the "friend" edge to the Profile entity was cleared.
+func (m *FriendMutation) FriendCleared() bool {
+	return m.clearedfriend
+}
+
+// FriendIDs returns the "friend" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// FriendID instead. It exists only for internal usage by the builders.
+func (m *FriendMutation) FriendIDs() (ids []uuid.UUID) {
+	if id := m.friend; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetFriend resets all changes to the "friend" edge.
+func (m *FriendMutation) ResetFriend() {
+	m.friend = nil
+	m.clearedfriend = false
+}
+
+// Where appends a list predicates to the FriendMutation builder.
+func (m *FriendMutation) Where(ps ...predicate.Friend) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the FriendMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *FriendMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Friend, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *FriendMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *FriendMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Friend).
+func (m *FriendMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *FriendMutation) Fields() []string {
+	fields := make([]string, 0, 4)
+	if m.profile != nil {
+		fields = append(fields, friend.FieldProfileID)
+	}
+	if m.friend != nil {
+		fields = append(fields, friend.FieldFriendID)
+	}
+	if m.since != nil {
+		fields = append(fields, friend.FieldSince)
+	}
+	if m.accepted != nil {
+		fields = append(fields, friend.FieldAccepted)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *FriendMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case friend.FieldProfileID:
+		return m.ProfileID()
+	case friend.FieldFriendID:
+		return m.FriendID()
+	case friend.FieldSince:
+		return m.Since()
+	case friend.FieldAccepted:
+		return m.Accepted()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *FriendMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	return nil, errors.New("edge schema Friend does not support getting old values")
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *FriendMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case friend.FieldProfileID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProfileID(v)
+		return nil
+	case friend.FieldFriendID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFriendID(v)
+		return nil
+	case friend.FieldSince:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSince(v)
+		return nil
+	case friend.FieldAccepted:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccepted(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Friend field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *FriendMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *FriendMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *FriendMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Friend numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *FriendMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *FriendMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *FriendMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Friend nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *FriendMutation) ResetField(name string) error {
+	switch name {
+	case friend.FieldProfileID:
+		m.ResetProfileID()
+		return nil
+	case friend.FieldFriendID:
+		m.ResetFriendID()
+		return nil
+	case friend.FieldSince:
+		m.ResetSince()
+		return nil
+	case friend.FieldAccepted:
+		m.ResetAccepted()
+		return nil
+	}
+	return fmt.Errorf("unknown Friend field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *FriendMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.profile != nil {
+		edges = append(edges, friend.EdgeProfile)
+	}
+	if m.friend != nil {
+		edges = append(edges, friend.EdgeFriend)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *FriendMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case friend.EdgeProfile:
+		if id := m.profile; id != nil {
+			return []ent.Value{*id}
+		}
+	case friend.EdgeFriend:
+		if id := m.friend; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *FriendMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *FriendMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *FriendMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedprofile {
+		edges = append(edges, friend.EdgeProfile)
+	}
+	if m.clearedfriend {
+		edges = append(edges, friend.EdgeFriend)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *FriendMutation) EdgeCleared(name string) bool {
+	switch name {
+	case friend.EdgeProfile:
+		return m.clearedprofile
+	case friend.EdgeFriend:
+		return m.clearedfriend
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *FriendMutation) ClearEdge(name string) error {
+	switch name {
+	case friend.EdgeProfile:
+		m.ClearProfile()
+		return nil
+	case friend.EdgeFriend:
+		m.ClearFriend()
+		return nil
+	}
+	return fmt.Errorf("unknown Friend unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *FriendMutation) ResetEdge(name string) error {
+	switch name {
+	case friend.EdgeProfile:
+		m.ResetProfile()
+		return nil
+	case friend.EdgeFriend:
+		m.ResetFriend()
+		return nil
+	}
+	return fmt.Errorf("unknown Friend edge %s", name)
+}
+
+// ProfileMutation represents an operation that mutates the Profile nodes in the graph.
+type ProfileMutation struct {
+	config
+	op              Op
+	typ             string
+	id              *uuid.UUID
+	firstname       *string
+	lastname        *string
+	phone           *string
+	clearedFields   map[string]struct{}
+	friends         map[uuid.UUID]struct{}
+	removedfriends  map[uuid.UUID]struct{}
+	clearedfriends  bool
+	bookings        map[int]struct{}
+	removedbookings map[int]struct{}
+	clearedbookings bool
+	done            bool
+	oldValue        func(context.Context) (*Profile, error)
+	predicates      []predicate.Profile
+}
+
+var _ ent.Mutation = (*ProfileMutation)(nil)
+
+// profileOption allows management of the mutation configuration using functional options.
+type profileOption func(*ProfileMutation)
+
+// newProfileMutation creates new mutation for the Profile entity.
+func newProfileMutation(c config, op Op, opts ...profileOption) *ProfileMutation {
+	m := &ProfileMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeProfile,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withProfileID sets the ID field of the mutation.
+func withProfileID(id uuid.UUID) profileOption {
+	return func(m *ProfileMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Profile
+		)
+		m.oldValue = func(ctx context.Context) (*Profile, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Profile.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withProfile sets the old Profile of the mutation.
+func withProfile(node *Profile) profileOption {
+	return func(m *ProfileMutation) {
+		m.oldValue = func(context.Context) (*Profile, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ProfileMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ProfileMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Profile entities.
+func (m *ProfileMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ProfileMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ProfileMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Profile.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetFirstname sets the "firstname" field.
+func (m *ProfileMutation) SetFirstname(s string) {
+	m.firstname = &s
+}
+
+// Firstname returns the value of the "firstname" field in the mutation.
+func (m *ProfileMutation) Firstname() (r string, exists bool) {
+	v := m.firstname
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFirstname returns the old "firstname" field's value of the Profile entity.
+// If the Profile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProfileMutation) OldFirstname(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFirstname is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFirstname requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFirstname: %w", err)
+	}
+	return oldValue.Firstname, nil
+}
+
+// ResetFirstname resets all changes to the "firstname" field.
+func (m *ProfileMutation) ResetFirstname() {
+	m.firstname = nil
+}
+
+// SetLastname sets the "lastname" field.
+func (m *ProfileMutation) SetLastname(s string) {
+	m.lastname = &s
+}
+
+// Lastname returns the value of the "lastname" field in the mutation.
+func (m *ProfileMutation) Lastname() (r string, exists bool) {
+	v := m.lastname
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastname returns the old "lastname" field's value of the Profile entity.
+// If the Profile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProfileMutation) OldLastname(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastname is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastname requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastname: %w", err)
+	}
+	return oldValue.Lastname, nil
+}
+
+// ResetLastname resets all changes to the "lastname" field.
+func (m *ProfileMutation) ResetLastname() {
+	m.lastname = nil
+}
+
+// SetPhone sets the "phone" field.
+func (m *ProfileMutation) SetPhone(s string) {
+	m.phone = &s
+}
+
+// Phone returns the value of the "phone" field in the mutation.
+func (m *ProfileMutation) Phone() (r string, exists bool) {
+	v := m.phone
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPhone returns the old "phone" field's value of the Profile entity.
+// If the Profile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProfileMutation) OldPhone(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPhone is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPhone requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPhone: %w", err)
+	}
+	return oldValue.Phone, nil
+}
+
+// ResetPhone resets all changes to the "phone" field.
+func (m *ProfileMutation) ResetPhone() {
+	m.phone = nil
+}
+
+// AddFriendIDs adds the "friends" edge to the Profile entity by ids.
+func (m *ProfileMutation) AddFriendIDs(ids ...uuid.UUID) {
+	if m.friends == nil {
+		m.friends = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.friends[ids[i]] = struct{}{}
+	}
+}
+
+// ClearFriends clears the "friends" edge to the Profile entity.
+func (m *ProfileMutation) ClearFriends() {
+	m.clearedfriends = true
+}
+
+// FriendsCleared reports if the "friends" edge to the Profile entity was cleared.
+func (m *ProfileMutation) FriendsCleared() bool {
+	return m.clearedfriends
+}
+
+// RemoveFriendIDs removes the "friends" edge to the Profile entity by IDs.
+func (m *ProfileMutation) RemoveFriendIDs(ids ...uuid.UUID) {
+	if m.removedfriends == nil {
+		m.removedfriends = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.friends, ids[i])
+		m.removedfriends[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedFriends returns the removed IDs of the "friends" edge to the Profile entity.
+func (m *ProfileMutation) RemovedFriendsIDs() (ids []uuid.UUID) {
+	for id := range m.removedfriends {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// FriendsIDs returns the "friends" edge IDs in the mutation.
+func (m *ProfileMutation) FriendsIDs() (ids []uuid.UUID) {
+	for id := range m.friends {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetFriends resets all changes to the "friends" edge.
+func (m *ProfileMutation) ResetFriends() {
+	m.friends = nil
+	m.clearedfriends = false
+	m.removedfriends = nil
+}
+
+// AddBookingIDs adds the "bookings" edge to the Room entity by ids.
+func (m *ProfileMutation) AddBookingIDs(ids ...int) {
+	if m.bookings == nil {
+		m.bookings = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.bookings[ids[i]] = struct{}{}
+	}
+}
+
+// ClearBookings clears the "bookings" edge to the Room entity.
+func (m *ProfileMutation) ClearBookings() {
+	m.clearedbookings = true
+}
+
+// BookingsCleared reports if the "bookings" edge to the Room entity was cleared.
+func (m *ProfileMutation) BookingsCleared() bool {
+	return m.clearedbookings
+}
+
+// RemoveBookingIDs removes the "bookings" edge to the Room entity by IDs.
+func (m *ProfileMutation) RemoveBookingIDs(ids ...int) {
+	if m.removedbookings == nil {
+		m.removedbookings = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.bookings, ids[i])
+		m.removedbookings[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedBookings returns the removed IDs of the "bookings" edge to the Room entity.
+func (m *ProfileMutation) RemovedBookingsIDs() (ids []int) {
+	for id := range m.removedbookings {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// BookingsIDs returns the "bookings" edge IDs in the mutation.
+func (m *ProfileMutation) BookingsIDs() (ids []int) {
+	for id := range m.bookings {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetBookings resets all changes to the "bookings" edge.
+func (m *ProfileMutation) ResetBookings() {
+	m.bookings = nil
+	m.clearedbookings = false
+	m.removedbookings = nil
+}
+
+// Where appends a list predicates to the ProfileMutation builder.
+func (m *ProfileMutation) Where(ps ...predicate.Profile) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ProfileMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ProfileMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Profile, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ProfileMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ProfileMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Profile).
+func (m *ProfileMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ProfileMutation) Fields() []string {
+	fields := make([]string, 0, 3)
+	if m.firstname != nil {
+		fields = append(fields, profile.FieldFirstname)
+	}
+	if m.lastname != nil {
+		fields = append(fields, profile.FieldLastname)
+	}
+	if m.phone != nil {
+		fields = append(fields, profile.FieldPhone)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ProfileMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case profile.FieldFirstname:
+		return m.Firstname()
+	case profile.FieldLastname:
+		return m.Lastname()
+	case profile.FieldPhone:
+		return m.Phone()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ProfileMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case profile.FieldFirstname:
+		return m.OldFirstname(ctx)
+	case profile.FieldLastname:
+		return m.OldLastname(ctx)
+	case profile.FieldPhone:
+		return m.OldPhone(ctx)
+	}
+	return nil, fmt.Errorf("unknown Profile field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ProfileMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case profile.FieldFirstname:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFirstname(v)
+		return nil
+	case profile.FieldLastname:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastname(v)
+		return nil
+	case profile.FieldPhone:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPhone(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Profile field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ProfileMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ProfileMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ProfileMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Profile numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ProfileMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ProfileMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ProfileMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Profile nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ProfileMutation) ResetField(name string) error {
+	switch name {
+	case profile.FieldFirstname:
+		m.ResetFirstname()
+		return nil
+	case profile.FieldLastname:
+		m.ResetLastname()
+		return nil
+	case profile.FieldPhone:
+		m.ResetPhone()
+		return nil
+	}
+	return fmt.Errorf("unknown Profile field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ProfileMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.friends != nil {
+		edges = append(edges, profile.EdgeFriends)
+	}
+	if m.bookings != nil {
+		edges = append(edges, profile.EdgeBookings)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ProfileMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case profile.EdgeFriends:
+		ids := make([]ent.Value, 0, len(m.friends))
+		for id := range m.friends {
+			ids = append(ids, id)
+		}
+		return ids
+	case profile.EdgeBookings:
+		ids := make([]ent.Value, 0, len(m.bookings))
+		for id := range m.bookings {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ProfileMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.removedfriends != nil {
+		edges = append(edges, profile.EdgeFriends)
+	}
+	if m.removedbookings != nil {
+		edges = append(edges, profile.EdgeBookings)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ProfileMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case profile.EdgeFriends:
+		ids := make([]ent.Value, 0, len(m.removedfriends))
+		for id := range m.removedfriends {
+			ids = append(ids, id)
+		}
+		return ids
+	case profile.EdgeBookings:
+		ids := make([]ent.Value, 0, len(m.removedbookings))
+		for id := range m.removedbookings {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ProfileMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedfriends {
+		edges = append(edges, profile.EdgeFriends)
+	}
+	if m.clearedbookings {
+		edges = append(edges, profile.EdgeBookings)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ProfileMutation) EdgeCleared(name string) bool {
+	switch name {
+	case profile.EdgeFriends:
+		return m.clearedfriends
+	case profile.EdgeBookings:
+		return m.clearedbookings
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ProfileMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Profile unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ProfileMutation) ResetEdge(name string) error {
+	switch name {
+	case profile.EdgeFriends:
+		m.ResetFriends()
+		return nil
+	case profile.EdgeBookings:
+		m.ResetBookings()
+		return nil
+	}
+	return fmt.Errorf("unknown Profile edge %s", name)
+}
+
+// RoomMutation represents an operation that mutates the Room nodes in the graph.
+type RoomMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *int
+	name                *string
+	floor               *string
+	building            *string
+	capacity            *int
+	addcapacity         *int
+	clearedFields       map[string]struct{}
+	bookings            map[uuid.UUID]struct{}
+	removedbookings     map[uuid.UUID]struct{}
+	clearedbookings     bool
+	availability        map[int]struct{}
+	removedavailability map[int]struct{}
+	clearedavailability bool
+	done                bool
+	oldValue            func(context.Context) (*Room, error)
+	predicates          []predicate.Room
+}
+
+var _ ent.Mutation = (*RoomMutation)(nil)
+
+// roomOption allows management of the mutation configuration using functional options.
+type roomOption func(*RoomMutation)
+
+// newRoomMutation creates new mutation for the Room entity.
+func newRoomMutation(c config, op Op, opts ...roomOption) *RoomMutation {
+	m := &RoomMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeRoom,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withRoomID sets the ID field of the mutation.
+func withRoomID(id int) roomOption {
+	return func(m *RoomMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Room
+		)
+		m.oldValue = func(ctx context.Context) (*Room, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Room.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withRoom sets the old Room of the mutation.
+func withRoom(node *Room) roomOption {
+	return func(m *RoomMutation) {
+		m.oldValue = func(context.Context) (*Room, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m RoomMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m RoomMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *RoomMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *RoomMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Room.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetName sets the "name" field.
+func (m *RoomMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *RoomMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the Room entity.
+// If the Room object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RoomMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *RoomMutation) ResetName() {
+	m.name = nil
+}
+
+// SetFloor sets the "floor" field.
+func (m *RoomMutation) SetFloor(s string) {
+	m.floor = &s
+}
+
+// Floor returns the value of the "floor" field in the mutation.
+func (m *RoomMutation) Floor() (r string, exists bool) {
+	v := m.floor
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFloor returns the old "floor" field's value of the Room entity.
+// If the Room object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RoomMutation) OldFloor(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFloor is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFloor requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFloor: %w", err)
+	}
+	return oldValue.Floor, nil
+}
+
+// ResetFloor resets all changes to the "floor" field.
+func (m *RoomMutation) ResetFloor() {
+	m.floor = nil
+}
+
+// SetBuilding sets the "building" field.
+func (m *RoomMutation) SetBuilding(s string) {
+	m.building = &s
+}
+
+// Building returns the value of the "building" field in the mutation.
+func (m *RoomMutation) Building() (r string, exists bool) {
+	v := m.building
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldBuilding returns the old "building" field's value of the Room entity.
+// If the Room object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RoomMutation) OldBuilding(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldBuilding is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldBuilding requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldBuilding: %w", err)
+	}
+	return oldValue.Building, nil
+}
+
+// ResetBuilding resets all changes to the "building" field.
+func (m *RoomMutation) ResetBuilding() {
+	m.building = nil
+}
+
+// SetCapacity sets the "capacity" field.
+func (m *RoomMutation) SetCapacity(i int) {
+	m.capacity = &i
+	m.addcapacity = nil
+}
+
+// Capacity returns the value of the "capacity" field in the mutation.
+func (m *RoomMutation) Capacity() (r int, exists bool) {
+	v := m.capacity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCapacity returns the old "capacity" field's value of the Room entity.
+// If the Room object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RoomMutation) OldCapacity(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCapacity is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCapacity requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCapacity: %w", err)
+	}
+	return oldValue.Capacity, nil
+}
+
+// AddCapacity adds i to the "capacity" field.
+func (m *RoomMutation) AddCapacity(i int) {
+	if m.addcapacity != nil {
+		*m.addcapacity += i
+	} else {
+		m.addcapacity = &i
+	}
+}
+
+// AddedCapacity returns the value that was added to the "capacity" field in this mutation.
+func (m *RoomMutation) AddedCapacity() (r int, exists bool) {
+	v := m.addcapacity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCapacity resets all changes to the "capacity" field.
+func (m *RoomMutation) ResetCapacity() {
+	m.capacity = nil
+	m.addcapacity = nil
+}
+
+// AddBookingIDs adds the "bookings" edge to the Profile entity by ids.
+func (m *RoomMutation) AddBookingIDs(ids ...uuid.UUID) {
+	if m.bookings == nil {
+		m.bookings = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.bookings[ids[i]] = struct{}{}
+	}
+}
+
+// ClearBookings clears the "bookings" edge to the Profile entity.
+func (m *RoomMutation) ClearBookings() {
+	m.clearedbookings = true
+}
+
+// BookingsCleared reports if the "bookings" edge to the Profile entity was cleared.
+func (m *RoomMutation) BookingsCleared() bool {
+	return m.clearedbookings
+}
+
+// RemoveBookingIDs removes the "bookings" edge to the Profile entity by IDs.
+func (m *RoomMutation) RemoveBookingIDs(ids ...uuid.UUID) {
+	if m.removedbookings == nil {
+		m.removedbookings = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.bookings, ids[i])
+		m.removedbookings[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedBookings returns the removed IDs of the "bookings" edge to the Profile entity.
+func (m *RoomMutation) RemovedBookingsIDs() (ids []uuid.UUID) {
+	for id := range m.removedbookings {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// BookingsIDs returns the "bookings" edge IDs in the mutation.
+func (m *RoomMutation) BookingsIDs() (ids []uuid.UUID) {
+	for id := range m.bookings {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetBookings resets all changes to the "bookings" edge.
+func (m *RoomMutation) ResetBookings() {
+	m.bookings = nil
+	m.clearedbookings = false
+	m.removedbookings = nil
+}
+
+// AddAvailabilityIDs adds the "availability" edge to the AvailableRoom entity by ids.
+func (m *RoomMutation) AddAvailabilityIDs(ids ...int) {
+	if m.availability == nil {
+		m.availability = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.availability[ids[i]] = struct{}{}
+	}
+}
+
+// ClearAvailability clears the "availability" edge to the AvailableRoom entity.
+func (m *RoomMutation) ClearAvailability() {
+	m.clearedavailability = true
+}
+
+// AvailabilityCleared reports if the "availability" edge to the AvailableRoom entity was cleared.
+func (m *RoomMutation) AvailabilityCleared() bool {
+	return m.clearedavailability
+}
+
+// RemoveAvailabilityIDs removes the "availability" edge to the AvailableRoom entity by IDs.
+func (m *RoomMutation) RemoveAvailabilityIDs(ids ...int) {
+	if m.removedavailability == nil {
+		m.removedavailability = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.availability, ids[i])
+		m.removedavailability[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedAvailability returns the removed IDs of the "availability" edge to the AvailableRoom entity.
+func (m *RoomMutation) RemovedAvailabilityIDs() (ids []int) {
+	for id := range m.removedavailability {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// AvailabilityIDs returns the "availability" edge IDs in the mutation.
+func (m *RoomMutation) AvailabilityIDs() (ids []int) {
+	for id := range m.availability {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetAvailability resets all changes to the "availability" edge.
+func (m *RoomMutation) ResetAvailability() {
+	m.availability = nil
+	m.clearedavailability = false
+	m.removedavailability = nil
+}
+
+// Where appends a list predicates to the RoomMutation builder.
+func (m *RoomMutation) Where(ps ...predicate.Room) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the RoomMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *RoomMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Room, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *RoomMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *RoomMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Room).
+func (m *RoomMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *RoomMutation) Fields() []string {
+	fields := make([]string, 0, 4)
+	if m.name != nil {
+		fields = append(fields, room.FieldName)
+	}
+	if m.floor != nil {
+		fields = append(fields, room.FieldFloor)
+	}
+	if m.building != nil {
+		fields = append(fields, room.FieldBuilding)
+	}
+	if m.capacity != nil {
+		fields = append(fields, room.FieldCapacity)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *RoomMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case room.FieldName:
+		return m.Name()
+	case room.FieldFloor:
+		return m.Floor()
+	case room.FieldBuilding:
+		return m.Building()
+	case room.FieldCapacity:
+		return m.Capacity()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *RoomMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case room.FieldName:
+		return m.OldName(ctx)
+	case room.FieldFloor:
+		return m.OldFloor(ctx)
+	case room.FieldBuilding:
+		return m.OldBuilding(ctx)
+	case room.FieldCapacity:
+		return m.OldCapacity(ctx)
+	}
+	return nil, fmt.Errorf("unknown Room field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *RoomMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case room.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case room.FieldFloor:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFloor(v)
+		return nil
+	case room.FieldBuilding:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetBuilding(v)
+		return nil
+	case room.FieldCapacity:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCapacity(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Room field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *RoomMutation) AddedFields() []string {
+	var fields []string
+	if m.addcapacity != nil {
+		fields = append(fields, room.FieldCapacity)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *RoomMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case room.FieldCapacity:
+		return m.AddedCapacity()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *RoomMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case room.FieldCapacity:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCapacity(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Room numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *RoomMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *RoomMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *RoomMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Room nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *RoomMutation) ResetField(name string) error {
+	switch name {
+	case room.FieldName:
+		m.ResetName()
+		return nil
+	case room.FieldFloor:
+		m.ResetFloor()
+		return nil
+	case room.FieldBuilding:
+		m.ResetBuilding()
+		return nil
+	case room.FieldCapacity:
+		m.ResetCapacity()
+		return nil
+	}
+	return fmt.Errorf("unknown Room field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *RoomMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.bookings != nil {
+		edges = append(edges, room.EdgeBookings)
+	}
+	if m.availability != nil {
+		edges = append(edges, room.EdgeAvailability)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *RoomMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case room.EdgeBookings:
+		ids := make([]ent.Value, 0, len(m.bookings))
+		for id := range m.bookings {
+			ids = append(ids, id)
+		}
+		return ids
+	case room.EdgeAvailability:
+		ids := make([]ent.Value, 0, len(m.availability))
+		for id := range m.availability {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *RoomMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.removedbookings != nil {
+		edges = append(edges, room.EdgeBookings)
+	}
+	if m.removedavailability != nil {
+		edges = append(edges, room.EdgeAvailability)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *RoomMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case room.EdgeBookings:
+		ids := make([]ent.Value, 0, len(m.removedbookings))
+		for id := range m.removedbookings {
+			ids = append(ids, id)
+		}
+		return ids
+	case room.EdgeAvailability:
+		ids := make([]ent.Value, 0, len(m.removedavailability))
+		for id := range m.removedavailability {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *RoomMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedbookings {
+		edges = append(edges, room.EdgeBookings)
+	}
+	if m.clearedavailability {
+		edges = append(edges, room.EdgeAvailability)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *RoomMutation) EdgeCleared(name string) bool {
+	switch name {
+	case room.EdgeBookings:
+		return m.clearedbookings
+	case room.EdgeAvailability:
+		return m.clearedavailability
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *RoomMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Room unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *RoomMutation) ResetEdge(name string) error {
+	switch name {
+	case room.EdgeBookings:
+		m.ResetBookings()
+		return nil
+	case room.EdgeAvailability:
+		m.ResetAvailability()
+		return nil
+	}
+	return fmt.Errorf("unknown Room edge %s", name)
 }

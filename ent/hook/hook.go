@@ -9,6 +9,18 @@ import (
 	"github.com/abc3354/CODEV-back/ent"
 )
 
+// The AvailableRoomFunc type is an adapter to allow the use of ordinary
+// function as AvailableRoom mutator.
+type AvailableRoomFunc func(context.Context, *ent.AvailableRoomMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AvailableRoomFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AvailableRoomMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AvailableRoomMutation", m)
+}
+
 // The BookingFunc type is an adapter to allow the use of ordinary
 // function as Booking mutator.
 type BookingFunc func(context.Context, *ent.BookingMutation) (ent.Value, error)
@@ -19,6 +31,42 @@ func (f BookingFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.BookingMutation", m)
+}
+
+// The FriendFunc type is an adapter to allow the use of ordinary
+// function as Friend mutator.
+type FriendFunc func(context.Context, *ent.FriendMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f FriendFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.FriendMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.FriendMutation", m)
+}
+
+// The ProfileFunc type is an adapter to allow the use of ordinary
+// function as Profile mutator.
+type ProfileFunc func(context.Context, *ent.ProfileMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ProfileFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ProfileMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProfileMutation", m)
+}
+
+// The RoomFunc type is an adapter to allow the use of ordinary
+// function as Room mutator.
+type RoomFunc func(context.Context, *ent.RoomMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f RoomFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.RoomMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RoomMutation", m)
 }
 
 // Condition is a hook condition function.

@@ -8,24 +8,123 @@ import (
 )
 
 var (
-	// BookingsColumns holds the columns for the "bookings" table.
-	BookingsColumns = []*schema.Column{
+	// AvailableRoomsColumns holds the columns for the "available_rooms" table.
+	AvailableRoomsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "name", Type: field.TypeString},
 		{Name: "start", Type: field.TypeTime},
 		{Name: "end", Type: field.TypeTime},
+		{Name: "room_availability", Type: field.TypeInt, Nullable: true},
+	}
+	// AvailableRoomsTable holds the schema information for the "available_rooms" table.
+	AvailableRoomsTable = &schema.Table{
+		Name:       "available_rooms",
+		Columns:    AvailableRoomsColumns,
+		PrimaryKey: []*schema.Column{AvailableRoomsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "available_rooms_rooms_availability",
+				Columns:    []*schema.Column{AvailableRoomsColumns[3]},
+				RefColumns: []*schema.Column{RoomsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
+	// BookingsColumns holds the columns for the "bookings" table.
+	BookingsColumns = []*schema.Column{
+		{Name: "number", Type: field.TypeInt},
+		{Name: "start", Type: field.TypeTime},
+		{Name: "end", Type: field.TypeTime},
+		{Name: "profile_id", Type: field.TypeUUID},
+		{Name: "room_id", Type: field.TypeInt},
 	}
 	// BookingsTable holds the schema information for the "bookings" table.
 	BookingsTable = &schema.Table{
 		Name:       "bookings",
 		Columns:    BookingsColumns,
-		PrimaryKey: []*schema.Column{BookingsColumns[0]},
+		PrimaryKey: []*schema.Column{BookingsColumns[3], BookingsColumns[4]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "bookings_profiles_profile",
+				Columns:    []*schema.Column{BookingsColumns[3]},
+				RefColumns: []*schema.Column{ProfilesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "bookings_rooms_room",
+				Columns:    []*schema.Column{BookingsColumns[4]},
+				RefColumns: []*schema.Column{RoomsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// FriendsColumns holds the columns for the "friends" table.
+	FriendsColumns = []*schema.Column{
+		{Name: "since", Type: field.TypeTime},
+		{Name: "accepted", Type: field.TypeBool},
+		{Name: "profile_id", Type: field.TypeUUID},
+		{Name: "friend_id", Type: field.TypeUUID},
+	}
+	// FriendsTable holds the schema information for the "friends" table.
+	FriendsTable = &schema.Table{
+		Name:       "friends",
+		Columns:    FriendsColumns,
+		PrimaryKey: []*schema.Column{FriendsColumns[2], FriendsColumns[3]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "friends_profiles_profile",
+				Columns:    []*schema.Column{FriendsColumns[2]},
+				RefColumns: []*schema.Column{ProfilesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "friends_profiles_friend",
+				Columns:    []*schema.Column{FriendsColumns[3]},
+				RefColumns: []*schema.Column{ProfilesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// ProfilesColumns holds the columns for the "profiles" table.
+	ProfilesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "firstname", Type: field.TypeString},
+		{Name: "lastname", Type: field.TypeString},
+		{Name: "phone", Type: field.TypeString},
+	}
+	// ProfilesTable holds the schema information for the "profiles" table.
+	ProfilesTable = &schema.Table{
+		Name:       "profiles",
+		Columns:    ProfilesColumns,
+		PrimaryKey: []*schema.Column{ProfilesColumns[0]},
+	}
+	// RoomsColumns holds the columns for the "rooms" table.
+	RoomsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "name", Type: field.TypeString},
+		{Name: "floor", Type: field.TypeString},
+		{Name: "building", Type: field.TypeString},
+		{Name: "capacity", Type: field.TypeInt},
+	}
+	// RoomsTable holds the schema information for the "rooms" table.
+	RoomsTable = &schema.Table{
+		Name:       "rooms",
+		Columns:    RoomsColumns,
+		PrimaryKey: []*schema.Column{RoomsColumns[0]},
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		AvailableRoomsTable,
 		BookingsTable,
+		FriendsTable,
+		ProfilesTable,
+		RoomsTable,
 	}
 )
 
 func init() {
+	AvailableRoomsTable.ForeignKeys[0].RefTable = RoomsTable
+	BookingsTable.ForeignKeys[0].RefTable = ProfilesTable
+	BookingsTable.ForeignKeys[1].RefTable = RoomsTable
+	FriendsTable.ForeignKeys[0].RefTable = ProfilesTable
+	FriendsTable.ForeignKeys[1].RefTable = ProfilesTable
 }

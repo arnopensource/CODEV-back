@@ -6,57 +6,24 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/abc3354/CODEV-back/ent/predicate"
+	"github.com/google/uuid"
 )
 
-// ID filters vertices based on their ID field.
-func ID(id int) predicate.Booking {
-	return predicate.Booking(sql.FieldEQ(FieldID, id))
+// ProfileID applies equality check predicate on the "profile_id" field. It's identical to ProfileIDEQ.
+func ProfileID(v uuid.UUID) predicate.Booking {
+	return predicate.Booking(sql.FieldEQ(FieldProfileID, v))
 }
 
-// IDEQ applies the EQ predicate on the ID field.
-func IDEQ(id int) predicate.Booking {
-	return predicate.Booking(sql.FieldEQ(FieldID, id))
+// RoomID applies equality check predicate on the "room_id" field. It's identical to RoomIDEQ.
+func RoomID(v int) predicate.Booking {
+	return predicate.Booking(sql.FieldEQ(FieldRoomID, v))
 }
 
-// IDNEQ applies the NEQ predicate on the ID field.
-func IDNEQ(id int) predicate.Booking {
-	return predicate.Booking(sql.FieldNEQ(FieldID, id))
-}
-
-// IDIn applies the In predicate on the ID field.
-func IDIn(ids ...int) predicate.Booking {
-	return predicate.Booking(sql.FieldIn(FieldID, ids...))
-}
-
-// IDNotIn applies the NotIn predicate on the ID field.
-func IDNotIn(ids ...int) predicate.Booking {
-	return predicate.Booking(sql.FieldNotIn(FieldID, ids...))
-}
-
-// IDGT applies the GT predicate on the ID field.
-func IDGT(id int) predicate.Booking {
-	return predicate.Booking(sql.FieldGT(FieldID, id))
-}
-
-// IDGTE applies the GTE predicate on the ID field.
-func IDGTE(id int) predicate.Booking {
-	return predicate.Booking(sql.FieldGTE(FieldID, id))
-}
-
-// IDLT applies the LT predicate on the ID field.
-func IDLT(id int) predicate.Booking {
-	return predicate.Booking(sql.FieldLT(FieldID, id))
-}
-
-// IDLTE applies the LTE predicate on the ID field.
-func IDLTE(id int) predicate.Booking {
-	return predicate.Booking(sql.FieldLTE(FieldID, id))
-}
-
-// Name applies equality check predicate on the "name" field. It's identical to NameEQ.
-func Name(v string) predicate.Booking {
-	return predicate.Booking(sql.FieldEQ(FieldName, v))
+// Number applies equality check predicate on the "number" field. It's identical to NumberEQ.
+func Number(v int) predicate.Booking {
+	return predicate.Booking(sql.FieldEQ(FieldNumber, v))
 }
 
 // Start applies equality check predicate on the "start" field. It's identical to StartEQ.
@@ -69,69 +36,84 @@ func End(v time.Time) predicate.Booking {
 	return predicate.Booking(sql.FieldEQ(FieldEnd, v))
 }
 
-// NameEQ applies the EQ predicate on the "name" field.
-func NameEQ(v string) predicate.Booking {
-	return predicate.Booking(sql.FieldEQ(FieldName, v))
+// ProfileIDEQ applies the EQ predicate on the "profile_id" field.
+func ProfileIDEQ(v uuid.UUID) predicate.Booking {
+	return predicate.Booking(sql.FieldEQ(FieldProfileID, v))
 }
 
-// NameNEQ applies the NEQ predicate on the "name" field.
-func NameNEQ(v string) predicate.Booking {
-	return predicate.Booking(sql.FieldNEQ(FieldName, v))
+// ProfileIDNEQ applies the NEQ predicate on the "profile_id" field.
+func ProfileIDNEQ(v uuid.UUID) predicate.Booking {
+	return predicate.Booking(sql.FieldNEQ(FieldProfileID, v))
 }
 
-// NameIn applies the In predicate on the "name" field.
-func NameIn(vs ...string) predicate.Booking {
-	return predicate.Booking(sql.FieldIn(FieldName, vs...))
+// ProfileIDIn applies the In predicate on the "profile_id" field.
+func ProfileIDIn(vs ...uuid.UUID) predicate.Booking {
+	return predicate.Booking(sql.FieldIn(FieldProfileID, vs...))
 }
 
-// NameNotIn applies the NotIn predicate on the "name" field.
-func NameNotIn(vs ...string) predicate.Booking {
-	return predicate.Booking(sql.FieldNotIn(FieldName, vs...))
+// ProfileIDNotIn applies the NotIn predicate on the "profile_id" field.
+func ProfileIDNotIn(vs ...uuid.UUID) predicate.Booking {
+	return predicate.Booking(sql.FieldNotIn(FieldProfileID, vs...))
 }
 
-// NameGT applies the GT predicate on the "name" field.
-func NameGT(v string) predicate.Booking {
-	return predicate.Booking(sql.FieldGT(FieldName, v))
+// RoomIDEQ applies the EQ predicate on the "room_id" field.
+func RoomIDEQ(v int) predicate.Booking {
+	return predicate.Booking(sql.FieldEQ(FieldRoomID, v))
 }
 
-// NameGTE applies the GTE predicate on the "name" field.
-func NameGTE(v string) predicate.Booking {
-	return predicate.Booking(sql.FieldGTE(FieldName, v))
+// RoomIDNEQ applies the NEQ predicate on the "room_id" field.
+func RoomIDNEQ(v int) predicate.Booking {
+	return predicate.Booking(sql.FieldNEQ(FieldRoomID, v))
 }
 
-// NameLT applies the LT predicate on the "name" field.
-func NameLT(v string) predicate.Booking {
-	return predicate.Booking(sql.FieldLT(FieldName, v))
+// RoomIDIn applies the In predicate on the "room_id" field.
+func RoomIDIn(vs ...int) predicate.Booking {
+	return predicate.Booking(sql.FieldIn(FieldRoomID, vs...))
 }
 
-// NameLTE applies the LTE predicate on the "name" field.
-func NameLTE(v string) predicate.Booking {
-	return predicate.Booking(sql.FieldLTE(FieldName, v))
+// RoomIDNotIn applies the NotIn predicate on the "room_id" field.
+func RoomIDNotIn(vs ...int) predicate.Booking {
+	return predicate.Booking(sql.FieldNotIn(FieldRoomID, vs...))
 }
 
-// NameContains applies the Contains predicate on the "name" field.
-func NameContains(v string) predicate.Booking {
-	return predicate.Booking(sql.FieldContains(FieldName, v))
+// NumberEQ applies the EQ predicate on the "number" field.
+func NumberEQ(v int) predicate.Booking {
+	return predicate.Booking(sql.FieldEQ(FieldNumber, v))
 }
 
-// NameHasPrefix applies the HasPrefix predicate on the "name" field.
-func NameHasPrefix(v string) predicate.Booking {
-	return predicate.Booking(sql.FieldHasPrefix(FieldName, v))
+// NumberNEQ applies the NEQ predicate on the "number" field.
+func NumberNEQ(v int) predicate.Booking {
+	return predicate.Booking(sql.FieldNEQ(FieldNumber, v))
 }
 
-// NameHasSuffix applies the HasSuffix predicate on the "name" field.
-func NameHasSuffix(v string) predicate.Booking {
-	return predicate.Booking(sql.FieldHasSuffix(FieldName, v))
+// NumberIn applies the In predicate on the "number" field.
+func NumberIn(vs ...int) predicate.Booking {
+	return predicate.Booking(sql.FieldIn(FieldNumber, vs...))
 }
 
-// NameEqualFold applies the EqualFold predicate on the "name" field.
-func NameEqualFold(v string) predicate.Booking {
-	return predicate.Booking(sql.FieldEqualFold(FieldName, v))
+// NumberNotIn applies the NotIn predicate on the "number" field.
+func NumberNotIn(vs ...int) predicate.Booking {
+	return predicate.Booking(sql.FieldNotIn(FieldNumber, vs...))
 }
 
-// NameContainsFold applies the ContainsFold predicate on the "name" field.
-func NameContainsFold(v string) predicate.Booking {
-	return predicate.Booking(sql.FieldContainsFold(FieldName, v))
+// NumberGT applies the GT predicate on the "number" field.
+func NumberGT(v int) predicate.Booking {
+	return predicate.Booking(sql.FieldGT(FieldNumber, v))
+}
+
+// NumberGTE applies the GTE predicate on the "number" field.
+func NumberGTE(v int) predicate.Booking {
+	return predicate.Booking(sql.FieldGTE(FieldNumber, v))
+}
+
+// NumberLT applies the LT predicate on the "number" field.
+func NumberLT(v int) predicate.Booking {
+	return predicate.Booking(sql.FieldLT(FieldNumber, v))
+}
+
+// NumberLTE applies the LTE predicate on the "number" field.
+func NumberLTE(v int) predicate.Booking {
+	return predicate.Booking(sql.FieldLTE(FieldNumber, v))
 }
 
 // StartEQ applies the EQ predicate on the "start" field.
@@ -212,6 +194,60 @@ func EndLT(v time.Time) predicate.Booking {
 // EndLTE applies the LTE predicate on the "end" field.
 func EndLTE(v time.Time) predicate.Booking {
 	return predicate.Booking(sql.FieldLTE(FieldEnd, v))
+}
+
+// HasProfile applies the HasEdge predicate on the "profile" edge.
+func HasProfile() predicate.Booking {
+	return predicate.Booking(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, ProfileColumn),
+			sqlgraph.Edge(sqlgraph.M2O, false, ProfileTable, ProfileColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasProfileWith applies the HasEdge predicate on the "profile" edge with a given conditions (other predicates).
+func HasProfileWith(preds ...predicate.Profile) predicate.Booking {
+	return predicate.Booking(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, ProfileColumn),
+			sqlgraph.To(ProfileInverseTable, ProfileFieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, ProfileTable, ProfileColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasRoom applies the HasEdge predicate on the "room" edge.
+func HasRoom() predicate.Booking {
+	return predicate.Booking(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, RoomColumn),
+			sqlgraph.Edge(sqlgraph.M2O, false, RoomTable, RoomColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasRoomWith applies the HasEdge predicate on the "room" edge with a given conditions (other predicates).
+func HasRoomWith(preds ...predicate.Room) predicate.Booking {
+	return predicate.Booking(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, RoomColumn),
+			sqlgraph.To(RoomInverseTable, RoomFieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, RoomTable, RoomColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // And groups predicates with the AND operator between them.
