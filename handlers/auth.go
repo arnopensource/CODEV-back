@@ -147,7 +147,7 @@ func createProfile(c *gin.Context, id uuid.UUID) error {
 		return err
 	}
 	if hasProfile == 0 {
-		_, err = client.Profile.Create().SetID(id).SetFirstname("").SetLastname("").Save(c)
+		_, err = client.Profile.Create().SetID(id).Save(c)
 		if err != nil {
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return err

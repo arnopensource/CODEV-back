@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -27,15 +26,39 @@ func (pc *ProfileCreate) SetFirstname(s string) *ProfileCreate {
 	return pc
 }
 
+// SetNillableFirstname sets the "firstname" field if the given value is not nil.
+func (pc *ProfileCreate) SetNillableFirstname(s *string) *ProfileCreate {
+	if s != nil {
+		pc.SetFirstname(*s)
+	}
+	return pc
+}
+
 // SetLastname sets the "lastname" field.
 func (pc *ProfileCreate) SetLastname(s string) *ProfileCreate {
 	pc.mutation.SetLastname(s)
 	return pc
 }
 
+// SetNillableLastname sets the "lastname" field if the given value is not nil.
+func (pc *ProfileCreate) SetNillableLastname(s *string) *ProfileCreate {
+	if s != nil {
+		pc.SetLastname(*s)
+	}
+	return pc
+}
+
 // SetPhone sets the "phone" field.
 func (pc *ProfileCreate) SetPhone(s string) *ProfileCreate {
 	pc.mutation.SetPhone(s)
+	return pc
+}
+
+// SetNillablePhone sets the "phone" field if the given value is not nil.
+func (pc *ProfileCreate) SetNillablePhone(s *string) *ProfileCreate {
+	if s != nil {
+		pc.SetPhone(*s)
+	}
 	return pc
 }
 
@@ -109,15 +132,6 @@ func (pc *ProfileCreate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (pc *ProfileCreate) check() error {
-	if _, ok := pc.mutation.Firstname(); !ok {
-		return &ValidationError{Name: "firstname", err: errors.New(`ent: missing required field "Profile.firstname"`)}
-	}
-	if _, ok := pc.mutation.Lastname(); !ok {
-		return &ValidationError{Name: "lastname", err: errors.New(`ent: missing required field "Profile.lastname"`)}
-	}
-	if _, ok := pc.mutation.Phone(); !ok {
-		return &ValidationError{Name: "phone", err: errors.New(`ent: missing required field "Profile.phone"`)}
-	}
 	return nil
 }
 

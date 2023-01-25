@@ -87,9 +87,9 @@ var (
 	// ProfilesColumns holds the columns for the "profiles" table.
 	ProfilesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "firstname", Type: field.TypeString},
-		{Name: "lastname", Type: field.TypeString},
-		{Name: "phone", Type: field.TypeString},
+		{Name: "firstname", Type: field.TypeString, Nullable: true},
+		{Name: "lastname", Type: field.TypeString, Nullable: true},
+		{Name: "phone", Type: field.TypeString, Nullable: true},
 	}
 	// ProfilesTable holds the schema information for the "profiles" table.
 	ProfilesTable = &schema.Table{

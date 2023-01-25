@@ -124,6 +124,16 @@ func FirstnameHasSuffix(v string) predicate.Profile {
 	return predicate.Profile(sql.FieldHasSuffix(FieldFirstname, v))
 }
 
+// FirstnameIsNil applies the IsNil predicate on the "firstname" field.
+func FirstnameIsNil() predicate.Profile {
+	return predicate.Profile(sql.FieldIsNull(FieldFirstname))
+}
+
+// FirstnameNotNil applies the NotNil predicate on the "firstname" field.
+func FirstnameNotNil() predicate.Profile {
+	return predicate.Profile(sql.FieldNotNull(FieldFirstname))
+}
+
 // FirstnameEqualFold applies the EqualFold predicate on the "firstname" field.
 func FirstnameEqualFold(v string) predicate.Profile {
 	return predicate.Profile(sql.FieldEqualFold(FieldFirstname, v))
@@ -189,6 +199,16 @@ func LastnameHasSuffix(v string) predicate.Profile {
 	return predicate.Profile(sql.FieldHasSuffix(FieldLastname, v))
 }
 
+// LastnameIsNil applies the IsNil predicate on the "lastname" field.
+func LastnameIsNil() predicate.Profile {
+	return predicate.Profile(sql.FieldIsNull(FieldLastname))
+}
+
+// LastnameNotNil applies the NotNil predicate on the "lastname" field.
+func LastnameNotNil() predicate.Profile {
+	return predicate.Profile(sql.FieldNotNull(FieldLastname))
+}
+
 // LastnameEqualFold applies the EqualFold predicate on the "lastname" field.
 func LastnameEqualFold(v string) predicate.Profile {
 	return predicate.Profile(sql.FieldEqualFold(FieldLastname, v))
@@ -252,6 +272,16 @@ func PhoneHasPrefix(v string) predicate.Profile {
 // PhoneHasSuffix applies the HasSuffix predicate on the "phone" field.
 func PhoneHasSuffix(v string) predicate.Profile {
 	return predicate.Profile(sql.FieldHasSuffix(FieldPhone, v))
+}
+
+// PhoneIsNil applies the IsNil predicate on the "phone" field.
+func PhoneIsNil() predicate.Profile {
+	return predicate.Profile(sql.FieldIsNull(FieldPhone))
+}
+
+// PhoneNotNil applies the NotNil predicate on the "phone" field.
+func PhoneNotNil() predicate.Profile {
+	return predicate.Profile(sql.FieldNotNull(FieldPhone))
 }
 
 // PhoneEqualFold applies the EqualFold predicate on the "phone" field.

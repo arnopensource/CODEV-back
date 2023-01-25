@@ -35,15 +35,57 @@ func (pu *ProfileUpdate) SetFirstname(s string) *ProfileUpdate {
 	return pu
 }
 
+// SetNillableFirstname sets the "firstname" field if the given value is not nil.
+func (pu *ProfileUpdate) SetNillableFirstname(s *string) *ProfileUpdate {
+	if s != nil {
+		pu.SetFirstname(*s)
+	}
+	return pu
+}
+
+// ClearFirstname clears the value of the "firstname" field.
+func (pu *ProfileUpdate) ClearFirstname() *ProfileUpdate {
+	pu.mutation.ClearFirstname()
+	return pu
+}
+
 // SetLastname sets the "lastname" field.
 func (pu *ProfileUpdate) SetLastname(s string) *ProfileUpdate {
 	pu.mutation.SetLastname(s)
 	return pu
 }
 
+// SetNillableLastname sets the "lastname" field if the given value is not nil.
+func (pu *ProfileUpdate) SetNillableLastname(s *string) *ProfileUpdate {
+	if s != nil {
+		pu.SetLastname(*s)
+	}
+	return pu
+}
+
+// ClearLastname clears the value of the "lastname" field.
+func (pu *ProfileUpdate) ClearLastname() *ProfileUpdate {
+	pu.mutation.ClearLastname()
+	return pu
+}
+
 // SetPhone sets the "phone" field.
 func (pu *ProfileUpdate) SetPhone(s string) *ProfileUpdate {
 	pu.mutation.SetPhone(s)
+	return pu
+}
+
+// SetNillablePhone sets the "phone" field if the given value is not nil.
+func (pu *ProfileUpdate) SetNillablePhone(s *string) *ProfileUpdate {
+	if s != nil {
+		pu.SetPhone(*s)
+	}
+	return pu
+}
+
+// ClearPhone clears the value of the "phone" field.
+func (pu *ProfileUpdate) ClearPhone() *ProfileUpdate {
+	pu.mutation.ClearPhone()
 	return pu
 }
 
@@ -172,11 +214,20 @@ func (pu *ProfileUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := pu.mutation.Firstname(); ok {
 		_spec.SetField(profile.FieldFirstname, field.TypeString, value)
 	}
+	if pu.mutation.FirstnameCleared() {
+		_spec.ClearField(profile.FieldFirstname, field.TypeString)
+	}
 	if value, ok := pu.mutation.Lastname(); ok {
 		_spec.SetField(profile.FieldLastname, field.TypeString, value)
 	}
+	if pu.mutation.LastnameCleared() {
+		_spec.ClearField(profile.FieldLastname, field.TypeString)
+	}
 	if value, ok := pu.mutation.Phone(); ok {
 		_spec.SetField(profile.FieldPhone, field.TypeString, value)
+	}
+	if pu.mutation.PhoneCleared() {
+		_spec.ClearField(profile.FieldPhone, field.TypeString)
 	}
 	if pu.mutation.FriendsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -312,15 +363,57 @@ func (puo *ProfileUpdateOne) SetFirstname(s string) *ProfileUpdateOne {
 	return puo
 }
 
+// SetNillableFirstname sets the "firstname" field if the given value is not nil.
+func (puo *ProfileUpdateOne) SetNillableFirstname(s *string) *ProfileUpdateOne {
+	if s != nil {
+		puo.SetFirstname(*s)
+	}
+	return puo
+}
+
+// ClearFirstname clears the value of the "firstname" field.
+func (puo *ProfileUpdateOne) ClearFirstname() *ProfileUpdateOne {
+	puo.mutation.ClearFirstname()
+	return puo
+}
+
 // SetLastname sets the "lastname" field.
 func (puo *ProfileUpdateOne) SetLastname(s string) *ProfileUpdateOne {
 	puo.mutation.SetLastname(s)
 	return puo
 }
 
+// SetNillableLastname sets the "lastname" field if the given value is not nil.
+func (puo *ProfileUpdateOne) SetNillableLastname(s *string) *ProfileUpdateOne {
+	if s != nil {
+		puo.SetLastname(*s)
+	}
+	return puo
+}
+
+// ClearLastname clears the value of the "lastname" field.
+func (puo *ProfileUpdateOne) ClearLastname() *ProfileUpdateOne {
+	puo.mutation.ClearLastname()
+	return puo
+}
+
 // SetPhone sets the "phone" field.
 func (puo *ProfileUpdateOne) SetPhone(s string) *ProfileUpdateOne {
 	puo.mutation.SetPhone(s)
+	return puo
+}
+
+// SetNillablePhone sets the "phone" field if the given value is not nil.
+func (puo *ProfileUpdateOne) SetNillablePhone(s *string) *ProfileUpdateOne {
+	if s != nil {
+		puo.SetPhone(*s)
+	}
+	return puo
+}
+
+// ClearPhone clears the value of the "phone" field.
+func (puo *ProfileUpdateOne) ClearPhone() *ProfileUpdateOne {
+	puo.mutation.ClearPhone()
 	return puo
 }
 
@@ -473,11 +566,20 @@ func (puo *ProfileUpdateOne) sqlSave(ctx context.Context) (_node *Profile, err e
 	if value, ok := puo.mutation.Firstname(); ok {
 		_spec.SetField(profile.FieldFirstname, field.TypeString, value)
 	}
+	if puo.mutation.FirstnameCleared() {
+		_spec.ClearField(profile.FieldFirstname, field.TypeString)
+	}
 	if value, ok := puo.mutation.Lastname(); ok {
 		_spec.SetField(profile.FieldLastname, field.TypeString, value)
 	}
+	if puo.mutation.LastnameCleared() {
+		_spec.ClearField(profile.FieldLastname, field.TypeString)
+	}
 	if value, ok := puo.mutation.Phone(); ok {
 		_spec.SetField(profile.FieldPhone, field.TypeString, value)
+	}
+	if puo.mutation.PhoneCleared() {
+		_spec.ClearField(profile.FieldPhone, field.TypeString)
 	}
 	if puo.mutation.FriendsCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -13,10 +13,11 @@ func Ping(c *gin.Context) {
 }
 
 // PingEnt will do ent migration if ent was not used yet
-func PingEnt(_ *gin.Context) {
+func PingEnt(c *gin.Context) {
 	ent.Get()
+	c.JSON(http.StatusOK, "ent ok")
 }
 
 func Home(c *gin.Context) {
-	c.String(http.StatusOK, "Hello !")
+	c.JSON(http.StatusOK, "Service running")
 }
