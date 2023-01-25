@@ -1605,9 +1605,22 @@ func (m *ProfileMutation) OldFirstname(ctx context.Context) (v string, err error
 	return oldValue.Firstname, nil
 }
 
+// ClearFirstname clears the value of the "firstname" field.
+func (m *ProfileMutation) ClearFirstname() {
+	m.firstname = nil
+	m.clearedFields[profile.FieldFirstname] = struct{}{}
+}
+
+// FirstnameCleared returns if the "firstname" field was cleared in this mutation.
+func (m *ProfileMutation) FirstnameCleared() bool {
+	_, ok := m.clearedFields[profile.FieldFirstname]
+	return ok
+}
+
 // ResetFirstname resets all changes to the "firstname" field.
 func (m *ProfileMutation) ResetFirstname() {
 	m.firstname = nil
+	delete(m.clearedFields, profile.FieldFirstname)
 }
 
 // SetLastname sets the "lastname" field.
@@ -1641,9 +1654,22 @@ func (m *ProfileMutation) OldLastname(ctx context.Context) (v string, err error)
 	return oldValue.Lastname, nil
 }
 
+// ClearLastname clears the value of the "lastname" field.
+func (m *ProfileMutation) ClearLastname() {
+	m.lastname = nil
+	m.clearedFields[profile.FieldLastname] = struct{}{}
+}
+
+// LastnameCleared returns if the "lastname" field was cleared in this mutation.
+func (m *ProfileMutation) LastnameCleared() bool {
+	_, ok := m.clearedFields[profile.FieldLastname]
+	return ok
+}
+
 // ResetLastname resets all changes to the "lastname" field.
 func (m *ProfileMutation) ResetLastname() {
 	m.lastname = nil
+	delete(m.clearedFields, profile.FieldLastname)
 }
 
 // SetPhone sets the "phone" field.
@@ -1677,9 +1703,22 @@ func (m *ProfileMutation) OldPhone(ctx context.Context) (v string, err error) {
 	return oldValue.Phone, nil
 }
 
+// ClearPhone clears the value of the "phone" field.
+func (m *ProfileMutation) ClearPhone() {
+	m.phone = nil
+	m.clearedFields[profile.FieldPhone] = struct{}{}
+}
+
+// PhoneCleared returns if the "phone" field was cleared in this mutation.
+func (m *ProfileMutation) PhoneCleared() bool {
+	_, ok := m.clearedFields[profile.FieldPhone]
+	return ok
+}
+
 // ResetPhone resets all changes to the "phone" field.
 func (m *ProfileMutation) ResetPhone() {
 	m.phone = nil
+	delete(m.clearedFields, profile.FieldPhone)
 }
 
 // AddFriendIDs adds the "friends" edge to the Profile entity by ids.
@@ -1922,7 +1961,17 @@ func (m *ProfileMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *ProfileMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(profile.FieldFirstname) {
+		fields = append(fields, profile.FieldFirstname)
+	}
+	if m.FieldCleared(profile.FieldLastname) {
+		fields = append(fields, profile.FieldLastname)
+	}
+	if m.FieldCleared(profile.FieldPhone) {
+		fields = append(fields, profile.FieldPhone)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -1935,6 +1984,17 @@ func (m *ProfileMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *ProfileMutation) ClearField(name string) error {
+	switch name {
+	case profile.FieldFirstname:
+		m.ClearFirstname()
+		return nil
+	case profile.FieldLastname:
+		m.ClearLastname()
+		return nil
+	case profile.FieldPhone:
+		m.ClearPhone()
+		return nil
+	}
 	return fmt.Errorf("unknown Profile nullable field %s", name)
 }
 

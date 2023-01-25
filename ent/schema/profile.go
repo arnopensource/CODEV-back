@@ -14,9 +14,9 @@ type Profile struct {
 func (Profile) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.New()),
-		field.String("firstname"),
-		field.String("lastname"),
-		field.String("phone"),
+		field.String("firstname").Optional(),
+		field.String("lastname").Optional(),
+		field.String("phone").Optional(),
 	}
 }
 
