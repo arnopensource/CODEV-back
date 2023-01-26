@@ -32,7 +32,8 @@ func CreateBooking(c *gin.Context) {
 	client := ent.Get()
 
 	var body BookingBody
-	if err := c.MustBindWith(&body, binding.JSON); err != nil {
+	if err := c.ShouldBindWith(&body, binding.JSON); err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
