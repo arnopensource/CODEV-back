@@ -30,6 +30,8 @@ func main() {
 	r.GET("/auth/check", handlers.CheckToken)
 
 	r.GET("/rooms/empty", handlers.GetEmptyRooms)
+	r.GET("/users", handlers.GetUsers)
+	r.GET("/users/:id", handlers.GetUserById)
 
 	if err := r.Run(); err != nil {
 		log.Fatal(err)
