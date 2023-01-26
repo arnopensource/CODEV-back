@@ -25,3 +25,11 @@ func GetEmptyRooms(c *gin.Context) {
 	result := ade.GetEmptyRooms(at)
 	c.JSON(http.StatusOK, result)
 }
+
+//func PostBooking(c *gin.Context) {
+//	var body BookingBody
+//	if err := c.MustBindWith(&body, binding.JSON); err != nil {
+//		return
+//	}
+//
+//}
