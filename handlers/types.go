@@ -1,6 +1,9 @@
 package handlers
 
-import "time"
+import (
+	"github.com/google/uuid"
+	"time"
+)
 
 type LoginBody struct {
 	Email    string `json:"email" binding:"required"`
@@ -24,4 +27,12 @@ type NFCLoginBody struct {
 
 type NFCModificationBody struct {
 	NFC string `json:"nfc" binding:"required"`
+}
+
+type BookingBody struct {
+	ProfileID uuid.UUID `json:"profile_id"`
+	RoomID    int       `json:"room_id"`
+	Number    int       `json:"number"`
+	Start     time.Time `json:"start"`
+	End       time.Time `json:"end"`
 }

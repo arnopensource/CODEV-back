@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"github.com/abc3354/CODEV-back/services/ent"
+	"github.com/gin-gonic/gin/binding"
 	"net/http"
 	"strconv"
 	"time"
@@ -26,10 +28,25 @@ func GetEmptyRooms(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-//func PostBooking(c *gin.Context) {
-//	var body BookingBody
-//	if err := c.MustBindWith(&body, binding.JSON); err != nil {
-//		return
-//	}
-//
-//}
+func CreateBooking(c *gin.Context) {
+	client := ent.Get()
+
+	var body BookingBody
+	if err := c.MustBindWith(&body, binding.JSON); err != nil {
+		return
+	}
+
+	_, err := client.Booking.Create().
+		SetRoomID(body.RoomID).
+		SetProfileID(body.ProfileID).
+		SetStart(body.Start).
+		SetEnd(body.End).
+		SetNumber(body.Number).
+		Save(c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, "ok")
+}
