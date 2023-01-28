@@ -29,6 +29,12 @@ func GetEmptyRooms(c *gin.Context) {
 }
 
 func CreateBooking(c *gin.Context) {
+	_, err := checkToken(c)
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
 	client := ent.Get()
 
 	var body BookingBody
@@ -37,7 +43,7 @@ func CreateBooking(c *gin.Context) {
 		return
 	}
 
-	_, err := client.Booking.Create().
+	_, err = client.Booking.Create().
 		SetRoomID(body.RoomID).
 		SetProfileID(body.ProfileID).
 		SetStart(body.Start).
