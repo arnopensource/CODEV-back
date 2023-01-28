@@ -9,10 +9,18 @@ import (
 )
 
 func GetUsers(c *gin.Context) {
+	_, err := checkToken(c)
+	if err != nil {
+		c.AbortWithError(http.StatusUnauthorized, err)
+		return
+	}
+
+	filterName := c.Query("name")
 
 	client := ent.Get()
 	profiles, err := client.Profile.
 		Query().
+		Where(profile.FirstnameContains(filterName)).
 		Select(profile.FieldID, profile.FieldFirstname, profile.FieldLastname).
 		All(c)
 
@@ -26,6 +34,12 @@ func GetUsers(c *gin.Context) {
 }
 
 func GetUserById(c *gin.Context) {
+
+	_, err := checkToken(c)
+	if err != nil {
+		c.AbortWithError(http.StatusUnauthorized, err)
+		return
+	}
 
 	userID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
