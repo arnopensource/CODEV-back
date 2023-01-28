@@ -9,10 +9,12 @@ import (
 )
 
 func GetUsers(c *gin.Context) {
+	filterName := c.Query("name")
 
 	client := ent.Get()
 	profiles, err := client.Profile.
 		Query().
+		Where(profile.FirstnameContains(filterName)).
 		Select(profile.FieldID, profile.FieldFirstname, profile.FieldLastname).
 		All(c)
 
