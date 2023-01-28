@@ -40,20 +40,20 @@ func CreateBooking(c *gin.Context) {
 
 	client := ent.Get()
 
-	//check if is already booked
-	room, err := client.Room.Query().Where(room.ID(body.RoomID)).Only(c)
-	if err != nil {
-		c.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
-
 	var body BookingBody
 	if err := c.ShouldBindWith(&body, binding.JSON); err != nil {
 		c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
-	isAvailable, err := room.QueryAvailability().Where(availableroom.And(
+	//check if is already booked
+	bookedRoom, err := client.Room.Query().Where(room.ID(body.RoomID)).Only(c)
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	isAvailable, err := bookedRoom.QueryAvailability().Where(availableroom.And(
 		availableroom.StartLTE(body.Start),
 		availableroom.EndGTE(body.End),
 	)).Only(c)
@@ -67,6 +67,8 @@ func CreateBooking(c *gin.Context) {
 		})
 		return
 	}
+
+	//TODO: Check is room is at max capacity
 
 	_, err = client.Booking.Create().
 		SetRoomID(body.RoomID).
