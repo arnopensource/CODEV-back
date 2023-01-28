@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 
@@ -120,23 +121,28 @@ func NFCChangeID(c *gin.Context) {
 }
 
 func CheckToken(c *gin.Context) {
-	token := c.GetHeader("Authorization")
-	if !strings.HasPrefix(token, "Bearer ") {
-		c.JSON(http.StatusBadRequest, map[string]any{
-			"error": "no token in header",
-		})
-		return
-	}
-	token = strings.TrimPrefix(token, "Bearer ")
-
-	_, err := gotrue.Get().WithToken(token).GetUser()
+	_, err := checkToken(c)
 	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
+		c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 	c.JSON(http.StatusOK, map[string]any{
 		"valid": true,
 	})
+}
+
+func checkToken(c *gin.Context) (*types.User, error) {
+	token := c.GetHeader("Authorization")
+	if !strings.HasPrefix(token, "Bearer ") {
+		return nil, errors.New("no token in header")
+	}
+	token = strings.TrimPrefix(token, "Bearer ")
+
+	user, err := gotrue.Get().WithToken(token).GetUser()
+	if err != nil {
+		return nil, err
+	}
+	return &user.User, nil
 }
 
 func createProfile(c *gin.Context, id uuid.UUID) error {

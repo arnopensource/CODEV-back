@@ -13,6 +13,7 @@ func GetUsers(c *gin.Context) {
 	client := ent.Get()
 	profiles, err := client.Profile.
 		Query().
+		Select(profile.FieldID, profile.FieldFirstname, profile.FieldLastname).
 		All(c)
 
 	if err != nil {
@@ -36,6 +37,7 @@ func GetUserById(c *gin.Context) {
 	userProfile, err := client.Profile.
 		Query().
 		Where(profile.ID(userID)).
+		Select(profile.FieldID, profile.FieldFirstname, profile.FieldLastname).
 		Only(c)
 
 	if err != nil {
