@@ -34,7 +34,7 @@ func CreateBooking(c *gin.Context) {
 	//auth
 	_, err := checkToken(c)
 	if err != nil {
-		c.AbortWithError(http.StatusBadRequest, err)
+		c.AbortWithError(http.StatusUnauthorized, err)
 		return
 	}
 
