@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"github.com/abc3354/CODEV-back/ent/availableroom"
+	"github.com/abc3354/CODEV-back/ent/room"
 	"github.com/abc3354/CODEV-back/services/ent"
 	"github.com/gin-gonic/gin/binding"
 	"net/http"
@@ -29,6 +31,7 @@ func GetEmptyRooms(c *gin.Context) {
 }
 
 func CreateBooking(c *gin.Context) {
+	//auth
 	_, err := checkToken(c)
 	if err != nil {
 		c.AbortWithError(http.StatusBadRequest, err)
@@ -37,9 +40,31 @@ func CreateBooking(c *gin.Context) {
 
 	client := ent.Get()
 
+	//check if is already booked
+	room, err := client.Room.Query().Where(room.ID(body.RoomID)).Only(c)
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
 	var body BookingBody
 	if err := c.ShouldBindWith(&body, binding.JSON); err != nil {
 		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	isAvailable, err := room.QueryAvailability().Where(availableroom.And(
+		availableroom.StartLTE(body.Start),
+		availableroom.EndGTE(body.End),
+	)).Only(c)
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+	if isAvailable == nil {
+		c.JSON(http.StatusBadRequest, map[string]any{
+			"error": "room is not available",
+		})
 		return
 	}
 
