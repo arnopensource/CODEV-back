@@ -25,8 +25,7 @@ func Login(c *gin.Context) {
 	}
 	resp, err := gotrue.Get().SignInWithEmailPassword(body.Email, body.Password)
 	if err != nil {
-		// todo check if it is a login error
-		c.AbortWithError(http.StatusInternalServerError, err)
+		gotrue.ParseError(err).Apply(c)
 		return
 	}
 	if err = createProfile(c, resp.User.ID); err != nil {
@@ -49,7 +48,7 @@ func Signup(c *gin.Context) {
 	}
 	resp, err := gotrue.Get().Signup(req)
 	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
+		gotrue.ParseError(err).Apply(c)
 		return
 	}
 	if !resp.ConfirmedAt.IsZero() {
@@ -111,7 +110,7 @@ func NFCChangeID(c *gin.Context) {
 		Data: map[string]interface{}{"nfc": body.NFC},
 	})
 	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
+		gotrue.ParseError(err).Apply(c)
 		return
 	}
 	c.JSON(http.StatusOK, map[string]any{
@@ -131,7 +130,7 @@ func CheckToken(c *gin.Context) {
 
 	_, err := gotrue.Get().WithToken(token).GetUser()
 	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
+		gotrue.ParseError(err).Apply(c)
 		return
 	}
 	c.JSON(http.StatusOK, map[string]any{
