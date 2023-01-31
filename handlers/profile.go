@@ -62,3 +62,25 @@ func GetUserById(c *gin.Context) {
 	c.JSON(http.StatusOK, userProfile)
 
 }
+
+func GetMyUser(c *gin.Context) {
+	user, err := checkToken(c)
+	if err != nil {
+		c.AbortWithError(http.StatusUnauthorized, err)
+		return
+	}
+
+	client := ent.Get()
+	userProfile, err := client.Profile.
+		Query().
+		Where(profile.ID(user.ID)).
+		Select(profile.FieldID, profile.FieldFirstname, profile.FieldLastname).
+		WithFriends().
+		Only(c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, userProfile)
+}
