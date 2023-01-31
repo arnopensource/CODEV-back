@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/abc3354/CODEV-back/ent/availableroom"
+	"github.com/abc3354/CODEV-back/ent/booking"
 	"github.com/abc3354/CODEV-back/ent/room"
 	"github.com/abc3354/CODEV-back/services/ent"
 	"github.com/gin-gonic/gin/binding"
@@ -81,4 +82,24 @@ func CreateBooking(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, "ok")
+}
+
+func GetUserBookings(c *gin.Context) {
+	//auth
+	user, err := checkToken(c)
+	if err != nil {
+		c.AbortWithError(http.StatusUnauthorized, err)
+		return
+	}
+
+	client := ent.Get()
+
+	bookings, err := client.Booking.Query().Where(booking.ProfileID(user.ID)).All(c)
+
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, bookings)
 }
