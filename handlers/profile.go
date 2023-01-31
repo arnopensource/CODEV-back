@@ -1,11 +1,12 @@
 package handlers
 
 import (
+	"net/http"
+
 	"github.com/abc3354/CODEV-back/ent/profile"
 	"github.com/abc3354/CODEV-back/services/ent"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"net/http"
 )
 
 func GetUsers(c *gin.Context) {
@@ -20,7 +21,10 @@ func GetUsers(c *gin.Context) {
 	client := ent.Get()
 	profiles, err := client.Profile.
 		Query().
-		Where(profile.FirstnameContains(filterName)).
+		Where(profile.Or(
+			profile.FirstnameContainsFold(filterName),
+			profile.LastnameContainsFold(filterName),
+		)).
 		Select(profile.FieldID, profile.FieldFirstname, profile.FieldLastname).
 		All(c)
 
