@@ -1,9 +1,10 @@
 package handlers
 
 import (
-	_ent "github.com/abc3354/CODEV-back/ent"
 	"net/http"
 	"time"
+
+	_ent "github.com/abc3354/CODEV-back/ent"
 
 	"github.com/abc3354/CODEV-back/ent/profile"
 	"github.com/abc3354/CODEV-back/services/ent"
@@ -122,11 +123,20 @@ func UpdateUser(c *gin.Context) {
 	}
 
 	client := ent.Get()
-	err = client.Profile.
-		UpdateOneID(user.ID).
-		SetFirstname(body.Firstname).
-		SetLastname(body.Lastname).
-		Exec(c)
+
+	exec := client.Profile.
+		UpdateOneID(user.ID)
+
+	if body.Firstname != "" {
+		exec.SetFirstname(body.Firstname)
+	}
+
+	if body.Lastname != "" {
+		exec.SetLastname(body.Lastname)
+	}
+
+	err = exec.Exec(c)
+
 	if err != nil {
 		c.AbortWithError(http.StatusBadRequest, err)
 		return
