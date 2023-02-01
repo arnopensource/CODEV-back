@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -79,29 +78,27 @@ func GetMyUser(c *gin.Context) {
 	}
 
 	client := ent.Get()
-	//userProfile, err := client.Profile.
-	//	Query().
-	//	Where(profile.ID(user.ID)).
-	//	Select(profile.FieldID, profile.FieldFirstname, profile.FieldLastname).
-	//	WithFriendsData().
-	//	Only(c)
-	//if err != nil {
-	//	c.AbortWithError(http.StatusInternalServerError, err)
-	//	return
-	//}
+	userProfile, err := client.Profile.
+		Query().
+		Where(profile.ID(user.ID)).
+		Select(profile.FieldID, profile.FieldFirstname, profile.FieldLastname).
+		Only(c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
 
-	arno := client.Profile.Query().Where(profile.ID(user.ID)).OnlyX(c)
+	// add friends manually because there is a problem with .WithFriends
+	for _, req := range getFriendsByUserId(user.ID) {
+		friends, err := req.All(c)
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+		userProfile.Edges.Friends = append(userProfile.Edges.Friends, friends...)
+	}
 
-	bob := client.Profile.Query().Where(profile.ID(uuid.MustParse("9b91d099-2175-42a2-8e43-cb60a7b6182a"))).OnlyX(c)
-
-	friends := arno.QueryFriends().AllX(c)
-	fmt.Println(friends)
-
-	friends = bob.QueryFriends().AllX(c)
-	fmt.Println(friends)
-
-	//c.JSON(http.StatusOK, userProfile)
-	c.JSON(http.StatusOK, "ok")
+	c.JSON(http.StatusOK, userProfile)
 }
 
 func UpdateUser(c *gin.Context) {
