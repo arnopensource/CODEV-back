@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"github.com/google/uuid"
 	"time"
 )
 
@@ -30,11 +29,10 @@ type NFCModificationBody struct {
 }
 
 type BookingBody struct {
-	ProfileID uuid.UUID `json:"profile_id"`
-	RoomID    int       `json:"room_id"`
-	Number    int       `json:"number"`
-	Start     time.Time `json:"start"`
-	End       time.Time `json:"end"`
+	RoomID int       `json:"room_id"`
+	Number int       `json:"number"`
+	Start  time.Time `json:"start"`
+	End    time.Time `json:"end"`
 }
 
 type UpdateUserBody struct {

@@ -32,8 +32,10 @@ func main() {
 	r.GET("/rooms/empty", handlers.GetEmptyRooms)
 	r.GET("/users", handlers.GetUsers)
 	r.GET("/users/:id", handlers.GetUserById)
-	r.POST("/bookings", handlers.CreateBooking)
 	r.PUT("/users/:id", handlers.UptadeUsers)
+
+	r.POST("/bookings", handlers.CreateBooking)
+	r.GET("/bookings", handlers.GetUserBookings)
 
 	if err := r.Run(); err != nil {
 		log.Fatal(err)

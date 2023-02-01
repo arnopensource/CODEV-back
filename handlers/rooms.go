@@ -1,13 +1,15 @@
 package handlers
 
 import (
-	"github.com/abc3354/CODEV-back/ent/availableroom"
-	"github.com/abc3354/CODEV-back/ent/room"
-	"github.com/abc3354/CODEV-back/services/ent"
-	"github.com/gin-gonic/gin/binding"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/abc3354/CODEV-back/ent/availableroom"
+	"github.com/abc3354/CODEV-back/ent/booking"
+	"github.com/abc3354/CODEV-back/ent/room"
+	"github.com/abc3354/CODEV-back/services/ent"
+	"github.com/gin-gonic/gin/binding"
 
 	"github.com/abc3354/CODEV-back/services/ade"
 	"github.com/gin-gonic/gin"
@@ -32,7 +34,7 @@ func GetEmptyRooms(c *gin.Context) {
 
 func CreateBooking(c *gin.Context) {
 	//auth
-	_, err := checkToken(c)
+	user, err := checkToken(c)
 	if err != nil {
 		c.AbortWithError(http.StatusUnauthorized, err)
 		return
@@ -46,7 +48,6 @@ func CreateBooking(c *gin.Context) {
 		return
 	}
 
-	//check if is already booked
 	bookedRoom, err := client.Room.Query().Where(room.ID(body.RoomID)).Only(c)
 	if err != nil {
 		c.AbortWithError(http.StatusBadRequest, err)
@@ -68,11 +69,9 @@ func CreateBooking(c *gin.Context) {
 		return
 	}
 
-	//TODO: Check is room is at max capacity
-
 	_, err = client.Booking.Create().
 		SetRoomID(body.RoomID).
-		SetProfileID(body.ProfileID).
+		SetProfileID(user.ID).
 		SetStart(body.Start).
 		SetEnd(body.End).
 		SetNumber(body.Number).
@@ -83,4 +82,24 @@ func CreateBooking(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, "ok")
+}
+
+func GetUserBookings(c *gin.Context) {
+	//auth
+	user, err := checkToken(c)
+	if err != nil {
+		c.AbortWithError(http.StatusUnauthorized, err)
+		return
+	}
+
+	client := ent.Get()
+
+	bookings, err := client.Booking.Query().Where(booking.ProfileID(user.ID)).All(c)
+
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, bookings)
 }
