@@ -35,6 +35,10 @@ func main() {
 	r.POST("/bookings", handlers.CreateBooking)
 	r.GET("/bookings", handlers.GetUserBookings)
 
+	r.GET("/friends", handlers.GetFriends)
+	r.POST("/friends/:id", handlers.AddFriend)
+	r.PUT("/friends/:id", handlers.FriendRequestDecision)
+
 	if err := r.Run(); err != nil {
 		log.Fatal(err)
 	}

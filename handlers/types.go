@@ -34,3 +34,5 @@ type BookingBody struct {
 	Start  time.Time `json:"start"`
 	End    time.Time `json:"end"`
 }
+
+type FriendRequestDecisionBody = bool
