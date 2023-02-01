@@ -31,6 +31,7 @@ func main() {
 
 	r.GET("/users", handlers.GetUsers)
 	r.GET("/users/:id", handlers.GetUserById)
+	r.GET("/users/me", handlers.GetMyUser)
 	r.PUT("/users", handlers.UpdateUser)
 
 	r.GET("/rooms/empty", handlers.GetEmptyRooms)
