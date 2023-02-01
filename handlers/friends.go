@@ -77,12 +77,12 @@ func FriendRequestDecision(c *gin.Context) {
 
 	friendPredicate :=
 		friend.And(
-			friend.ProfileID(user.ID),
-			friend.FriendID(friendID),
+			friend.ProfileID(friendID),
+			friend.FriendID(user.ID),
 		)
 
 	if body {
-		friend, err := client.Friend.
+		friendRequest, err := client.Friend.
 			Query().
 			Where(friendPredicate).
 			Only(c)
@@ -93,13 +93,13 @@ func FriendRequestDecision(c *gin.Context) {
 		}
 
 		// If friend request already accepted
-		if friend.Accepted {
+		if friendRequest.Accepted {
 			c.AbortWithStatus(http.StatusConflict)
 			return
 		}
 
 		_, err = client.Friend.
-			UpdateOne(friend).
+			UpdateOne(friendRequest).
 			SetAccepted(true).
 			SetSince(time.Now()).
 			Save(c)
