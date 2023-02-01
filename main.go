@@ -29,10 +29,11 @@ func main() {
 	r.PUT("/auth/nfc/id", handlers.NFCChangeID)
 	r.GET("/auth/check", handlers.CheckToken)
 
-	r.GET("/rooms/empty", handlers.GetEmptyRooms)
 	r.GET("/users", handlers.GetUsers)
 	r.GET("/users/:id", handlers.GetUserById)
 	r.PUT("/users", handlers.UpdateUser)
+
+	r.GET("/rooms/empty", handlers.GetEmptyRooms)
 
 	r.POST("/bookings", handlers.CreateBooking)
 	r.GET("/bookings", handlers.GetUserBookings)

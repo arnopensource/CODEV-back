@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func GetFriendsByUserId(id uuid.UUID) []*_ent.ProfileQuery {
+func getFriendsByUserId(id uuid.UUID) []*_ent.ProfileQuery {
 	client := ent.Get()
 	req := client.Friend.
 		Query().
@@ -37,7 +37,7 @@ func GetFriends(c *gin.Context) {
 
 	profiles := []*_ent.Profile{}
 
-	for _, req := range GetFriendsByUserId(user.ID) {
+	for _, req := range getFriendsByUserId(user.ID) {
 		friends, err := req.All(c)
 		if err != nil {
 			c.AbortWithError(http.StatusInternalServerError, err)

@@ -35,7 +35,7 @@ type BookingBody struct {
 	End    time.Time `json:"end"`
 }
 
-type FriendRequestDecisionBody = bool
+type FriendRequestDecisionBody bool
 
 type UpdateUserBody struct {
 	Firstname string `json:"firstname"`
