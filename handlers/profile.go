@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"github.com/abc3354/CODEV-back/ent/profile"
 	"github.com/abc3354/CODEV-back/services/ent"
 	"github.com/gin-gonic/gin"
@@ -71,16 +72,27 @@ func GetMyUser(c *gin.Context) {
 	}
 
 	client := ent.Get()
-	userProfile, err := client.Profile.
-		Query().
-		Where(profile.ID(user.ID)).
-		Select(profile.FieldID, profile.FieldFirstname, profile.FieldLastname).
-		WithFriends().
-		Only(c)
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
+	//userProfile, err := client.Profile.
+	//	Query().
+	//	Where(profile.ID(user.ID)).
+	//	Select(profile.FieldID, profile.FieldFirstname, profile.FieldLastname).
+	//	WithFriendsData().
+	//	Only(c)
+	//if err != nil {
+	//	c.AbortWithError(http.StatusInternalServerError, err)
+	//	return
+	//}
 
-	c.JSON(http.StatusOK, userProfile)
+	arno := client.Profile.Query().Where(profile.ID(user.ID)).OnlyX(c)
+
+	bob := client.Profile.Query().Where(profile.ID(uuid.MustParse("9b91d099-2175-42a2-8e43-cb60a7b6182a"))).OnlyX(c)
+
+	friends := arno.QueryFriends().AllX(c)
+	fmt.Println(friends)
+
+	friends = bob.QueryFriends().AllX(c)
+	fmt.Println(friends)
+
+	//c.JSON(http.StatusOK, userProfile)
+	c.JSON(http.StatusOK, "ok")
 }
