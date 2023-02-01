@@ -122,3 +122,42 @@ func FriendRequestDecision(c *gin.Context) {
 		c.JSON(http.StatusOK, false)
 	}
 }
+
+func RemoveFriend(c *gin.Context) {
+	user, err := checkToken(c)
+	if err != nil {
+		c.AbortWithError(http.StatusUnauthorized, err)
+		return
+	}
+
+	friendID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	client := ent.Get()
+
+	friendPredicate :=
+		friend.And(
+			friend.Or(
+				friend.ProfileID(user.ID),
+				friend.FriendID(user.ID),
+			),
+			friend.Or(
+				friend.ProfileID(friendID),
+				friend.FriendID(friendID),
+			),
+		)
+
+	_, err = client.Friend.
+		Delete().Where(friendPredicate).
+		Exec(c)
+
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	c.Status(http.StatusOK)
+}
