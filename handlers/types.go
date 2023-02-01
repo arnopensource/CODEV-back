@@ -36,3 +36,8 @@ type BookingBody struct {
 	Start     time.Time `json:"start"`
 	End       time.Time `json:"end"`
 }
+
+type UpdateUserBody struct {
+	Firstname string `json:"firstname"`
+	Lastname  string `json:"lastname"`
+}

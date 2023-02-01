@@ -33,6 +33,7 @@ func main() {
 	r.GET("/users", handlers.GetUsers)
 	r.GET("/users/:id", handlers.GetUserById)
 	r.POST("/bookings", handlers.CreateBooking)
+	r.PUT("/users/:id", handlers.UptadeUsers)
 
 	if err := r.Run(); err != nil {
 		log.Fatal(err)

@@ -4,6 +4,7 @@ import (
 	"github.com/abc3354/CODEV-back/ent/profile"
 	"github.com/abc3354/CODEV-back/services/ent"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	"github.com/google/uuid"
 	"net/http"
 )
@@ -61,4 +62,37 @@ func GetUserById(c *gin.Context) {
 
 	c.JSON(http.StatusOK, userProfile)
 
+}
+
+func UptadeUsers(c *gin.Context) {
+	_, err := checkToken(c)
+	if err != nil {
+		c.AbortWithError(http.StatusUnauthorized, err)
+		return
+	}
+
+	var body UpdateUserBody
+	if err := c.ShouldBindWith(&body, binding.JSON); err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	userID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	client := ent.Get()
+	err = client.Profile.
+		UpdateOneID(userID).
+		SetFirstname(body.Firstname).
+		SetLastname(body.Lastname).
+		Exec(c)
+
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+	c.JSON(http.StatusOK, "ok")
 }
