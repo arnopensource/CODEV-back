@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	_ent "github.com/abc3354/CODEV-back/ent"
 	"net/http"
 	"time"
 
@@ -98,7 +99,13 @@ func GetMyUser(c *gin.Context) {
 		userProfile.Edges.Friends = append(userProfile.Edges.Friends, friends...)
 	}
 
-	c.JSON(http.StatusOK, userProfile)
+	c.JSON(http.StatusOK, struct {
+		*_ent.Profile
+		Email string `json:"email"`
+	}{
+		Profile: userProfile,
+		Email:   user.Email,
+	})
 }
 
 func UpdateUser(c *gin.Context) {
