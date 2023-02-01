@@ -68,35 +68,29 @@ func GetUserById(c *gin.Context) {
 
 }
 
-func UptadeUsers(c *gin.Context) {
-	_, err := checkToken(c)
+func UpdateUser(c *gin.Context) {
+	user, err := checkToken(c)
 	if err != nil {
 		c.AbortWithError(http.StatusUnauthorized, err)
 		return
 	}
 
 	var body UpdateUserBody
-	if err := c.ShouldBindWith(&body, binding.JSON); err != nil {
-		c.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
-
-	userID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
+	if err = c.ShouldBindWith(&body, binding.JSON); err != nil {
 		c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
 	client := ent.Get()
 	err = client.Profile.
-		UpdateOneID(userID).
+		UpdateOneID(user.ID).
 		SetFirstname(body.Firstname).
 		SetLastname(body.Lastname).
 		Exec(c)
-
 	if err != nil {
 		c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
+
 	c.JSON(http.StatusOK, "ok")
 }

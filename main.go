@@ -32,7 +32,7 @@ func main() {
 	r.GET("/rooms/empty", handlers.GetEmptyRooms)
 	r.GET("/users", handlers.GetUsers)
 	r.GET("/users/:id", handlers.GetUserById)
-	r.PUT("/users/:id", handlers.UptadeUsers)
+	r.PUT("/users", handlers.UpdateUser)
 
 	r.POST("/bookings", handlers.CreateBooking)
 	r.GET("/bookings", handlers.GetUserBookings)
