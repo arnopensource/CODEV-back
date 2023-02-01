@@ -39,6 +39,7 @@ func main() {
 	r.POST("/friends/:id", handlers.AddFriend)
 	r.PUT("/friends/:id", handlers.FriendRequestDecision)
 	r.DELETE("/friends/:id", handlers.RemoveFriend)
+	r.GET("/friends/requests", handlers.GetFriendRequests)
 
 	if err := r.Run(); err != nil {
 		log.Fatal(err)

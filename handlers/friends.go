@@ -161,3 +161,29 @@ func RemoveFriend(c *gin.Context) {
 
 	c.Status(http.StatusOK)
 }
+
+func GetFriendRequests(c *gin.Context) {
+	user, err := checkToken(c)
+	if err != nil {
+		c.AbortWithError(http.StatusUnauthorized, err)
+		return
+	}
+
+	client := ent.Get()
+
+	req, err := client.Friend.
+		Query().
+		Where(friend.And(
+			friend.FriendID(user.ID),
+			friend.Accepted(false),
+		)).
+		WithProfile().
+		All(c)
+
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, req)
+}
