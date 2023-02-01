@@ -7,6 +7,7 @@ import (
 	"github.com/abc3354/CODEV-back/ent/profile"
 	"github.com/abc3354/CODEV-back/services/ent"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	"github.com/google/uuid"
 )
 
@@ -66,6 +67,33 @@ func GetUserById(c *gin.Context) {
 
 	c.JSON(http.StatusOK, userProfile)
 
+}
+
+func UpdateUser(c *gin.Context) {
+	user, err := checkToken(c)
+	if err != nil {
+		c.AbortWithError(http.StatusUnauthorized, err)
+		return
+	}
+
+	var body UpdateUserBody
+	if err = c.ShouldBindWith(&body, binding.JSON); err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	client := ent.Get()
+	err = client.Profile.
+		UpdateOneID(user.ID).
+		SetFirstname(body.Firstname).
+		SetLastname(body.Lastname).
+		Exec(c)
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, "ok")
 }
 
 func AddFriend(c *gin.Context) {

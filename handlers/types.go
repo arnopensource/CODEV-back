@@ -36,3 +36,8 @@ type BookingBody struct {
 }
 
 type FriendRequestDecisionBody = bool
+
+type UpdateUserBody struct {
+	Firstname string `json:"firstname"`
+	Lastname  string `json:"lastname"`
+}
