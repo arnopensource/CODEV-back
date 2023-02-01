@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
@@ -9,6 +10,14 @@ import (
 
 type Profile struct {
 	ent.Schema
+}
+
+func (Profile) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		edge.Annotation{
+			StructTag: `json:"-"`,
+		},
+	}
 }
 
 func (Profile) Fields() []ent.Field {

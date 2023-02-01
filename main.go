@@ -29,12 +29,21 @@ func main() {
 	r.PUT("/auth/nfc/id", handlers.NFCChangeID)
 	r.GET("/auth/check", handlers.CheckToken)
 
-	r.GET("/rooms/empty", handlers.GetEmptyRooms)
 	r.GET("/users", handlers.GetUsers)
 	r.GET("/users/:id", handlers.GetUserById)
 	r.GET("/users/me", handlers.GetMyUser)
+	r.PUT("/users", handlers.UpdateUser)
+
+	r.GET("/rooms/empty", handlers.GetEmptyRooms)
 
 	r.POST("/bookings", handlers.CreateBooking)
+	r.GET("/bookings", handlers.GetUserBookings)
+
+	r.GET("/friends", handlers.GetFriends)
+	r.POST("/friends/:id", handlers.AddFriend)
+	r.PUT("/friends/:id", handlers.FriendRequestDecision)
+	r.DELETE("/friends/:id", handlers.RemoveFriend)
+	r.GET("/friends/requests", handlers.GetFriendRequests)
 
 	if err := r.Run(); err != nil {
 		log.Fatal(err)
