@@ -231,3 +231,39 @@ func CancelInvite(c *gin.Context) {
 		"message": "success",
 	})
 }
+
+func GetInvitesOfEvent(c *gin.Context) {
+	user, err := checkToken(c)
+	if err != nil {
+		c.AbortWithError(http.StatusUnauthorized, err)
+		return
+	}
+
+	eventID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	isAdmin, err := checkAdminRights(user.ID, eventID, c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	if !isAdmin {
+		c.JSON(http.StatusUnauthorized, map[string]any{
+			"error": "you are not admin",
+		})
+		return
+	}
+
+	client := ent.Get()
+
+	invites, err := client.EventInvite.Query().Where(eventinvite.EventID(eventID)).WithProfile().All(c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, invites)
+}

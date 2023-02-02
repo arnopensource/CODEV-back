@@ -53,7 +53,7 @@ func main() {
 	r.GET("/events/invites", handlers.GetMyInvites)
 	r.PUT("/events/invites/:id", handlers.InviteDecision)
 	r.DELETE("/events/invites", handlers.CancelInvite)
-	r.GET("/events/{id}/invites", nil)
+	r.GET("/events/:id/invites", handlers.GetInvitesOfEvent)
 
 	if err := r.Run(); err != nil {
 		log.Fatal(err)
