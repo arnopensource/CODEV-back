@@ -2,9 +2,14 @@ package ent
 
 import (
 	"context"
+	"log"
+
 	"github.com/abc3354/CODEV-back/ent"
 	"github.com/abc3354/CODEV-back/services/env"
-	"log"
+
+	"github.com/abc3354/CODEV-back/ent/enttest"
+	_ "github.com/mattn/go-sqlite3"
+	"testing"
 )
 
 var client *ent.Client
@@ -29,4 +34,12 @@ func Close() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	client = nil
+}
+
+func Mock(t *testing.T) {
+	if client != nil {
+		log.Fatal("ent client already exists")
+	}
+	client = enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
 }

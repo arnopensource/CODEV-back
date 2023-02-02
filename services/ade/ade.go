@@ -56,6 +56,36 @@ func Update() {
 	}
 }
 
+func UpdateRooms() {
+	updateStart := time.Now()
+
+	downloadURL := generateURL(updateStart)
+
+	httpClient := http.Client{
+		Timeout: 5 * time.Minute,
+	}
+	res, err := httpClient.Get(downloadURL)
+	if err != nil {
+		panic(err)
+	}
+	defer func() {
+		if err = res.Body.Close(); err != nil {
+			log.Println(err)
+		}
+	}()
+
+	rooms := parseICAL(res.Body)
+
+	for _, adeRoom := range rooms {
+		ent.Get().Room.Create().
+			SetName(adeRoom.name).
+			SetBuilding("Polytech").
+			SetCapacity(30).
+			SetFloor("?").
+			SaveX(context.Background())
+	}
+}
+
 func calculateAvailability(adeRoom Room, bounds [2]time.Time) {
 	currentTime := bounds[0]
 	classPointer := 0
