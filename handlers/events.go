@@ -2,13 +2,14 @@ package handlers
 
 import (
 	"context"
-	"github.com/abc3354/CODEV-back/ent/event"
+	_ent "github.com/abc3354/CODEV-back/ent"
 	"github.com/google/uuid"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/abc3354/CODEV-back/ent/availableroom"
+	"github.com/abc3354/CODEV-back/ent/event"
 	"github.com/abc3354/CODEV-back/ent/member"
 	"github.com/abc3354/CODEV-back/ent/profile"
 	"github.com/abc3354/CODEV-back/ent/room"
@@ -122,13 +123,28 @@ func GetMyEvents(c *gin.Context) {
 		return
 	}
 
-	events, err := userProfile.QueryEvents().All(c)
+	events, err := userProfile.QueryEvents().WithMembers(func(query *_ent.MemberQuery) {
+		query.Where(member.ProfileID(user.ID))
+	}).All(c)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, events)
+	var result []struct {
+		*_ent.Event
+		IsAdmin bool `json:"isAdmin"`
+	}
+	for _, extractedEvent := range events {
+		isAdmin := extractedEvent.Edges.Members[0].IsAdmin
+		extractedEvent.Edges.Members = nil
+		result = append(result, struct {
+			*_ent.Event
+			IsAdmin bool `json:"isAdmin"`
+		}{extractedEvent, isAdmin})
+	}
+
+	c.JSON(http.StatusOK, result)
 }
 
 type ModifyEventRequest struct {

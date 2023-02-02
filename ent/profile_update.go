@@ -135,6 +135,21 @@ func (pu *ProfileUpdate) AddEvents(e ...*Event) *ProfileUpdate {
 	return pu.AddEventIDs(ids...)
 }
 
+// AddInvitedToIDs adds the "invitedTo" edge to the Event entity by IDs.
+func (pu *ProfileUpdate) AddInvitedToIDs(ids ...int) *ProfileUpdate {
+	pu.mutation.AddInvitedToIDs(ids...)
+	return pu
+}
+
+// AddInvitedTo adds the "invitedTo" edges to the Event entity.
+func (pu *ProfileUpdate) AddInvitedTo(e ...*Event) *ProfileUpdate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return pu.AddInvitedToIDs(ids...)
+}
+
 // Mutation returns the ProfileMutation object of the builder.
 func (pu *ProfileUpdate) Mutation() *ProfileMutation {
 	return pu.mutation
@@ -201,6 +216,27 @@ func (pu *ProfileUpdate) RemoveEvents(e ...*Event) *ProfileUpdate {
 		ids[i] = e[i].ID
 	}
 	return pu.RemoveEventIDs(ids...)
+}
+
+// ClearInvitedTo clears all "invitedTo" edges to the Event entity.
+func (pu *ProfileUpdate) ClearInvitedTo() *ProfileUpdate {
+	pu.mutation.ClearInvitedTo()
+	return pu
+}
+
+// RemoveInvitedToIDs removes the "invitedTo" edge to Event entities by IDs.
+func (pu *ProfileUpdate) RemoveInvitedToIDs(ids ...int) *ProfileUpdate {
+	pu.mutation.RemoveInvitedToIDs(ids...)
+	return pu
+}
+
+// RemoveInvitedTo removes "invitedTo" edges to Event entities.
+func (pu *ProfileUpdate) RemoveInvitedTo(e ...*Event) *ProfileUpdate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return pu.RemoveInvitedToIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -440,6 +476,72 @@ func (pu *ProfileUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		edge.Target.Fields = specE.Fields
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if pu.mutation.InvitedToCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   profile.InvitedToTable,
+			Columns: profile.InvitedToPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: event.FieldID,
+				},
+			},
+		}
+		createE := &EventInviteCreate{config: pu.config, mutation: newEventInviteMutation(pu.config, OpCreate)}
+		createE.defaults()
+		_, specE := createE.createSpec()
+		edge.Target.Fields = specE.Fields
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.RemovedInvitedToIDs(); len(nodes) > 0 && !pu.mutation.InvitedToCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   profile.InvitedToTable,
+			Columns: profile.InvitedToPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: event.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		createE := &EventInviteCreate{config: pu.config, mutation: newEventInviteMutation(pu.config, OpCreate)}
+		createE.defaults()
+		_, specE := createE.createSpec()
+		edge.Target.Fields = specE.Fields
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.InvitedToIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   profile.InvitedToTable,
+			Columns: profile.InvitedToPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: event.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		createE := &EventInviteCreate{config: pu.config, mutation: newEventInviteMutation(pu.config, OpCreate)}
+		createE.defaults()
+		_, specE := createE.createSpec()
+		edge.Target.Fields = specE.Fields
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, pu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{profile.Label}
@@ -565,6 +667,21 @@ func (puo *ProfileUpdateOne) AddEvents(e ...*Event) *ProfileUpdateOne {
 	return puo.AddEventIDs(ids...)
 }
 
+// AddInvitedToIDs adds the "invitedTo" edge to the Event entity by IDs.
+func (puo *ProfileUpdateOne) AddInvitedToIDs(ids ...int) *ProfileUpdateOne {
+	puo.mutation.AddInvitedToIDs(ids...)
+	return puo
+}
+
+// AddInvitedTo adds the "invitedTo" edges to the Event entity.
+func (puo *ProfileUpdateOne) AddInvitedTo(e ...*Event) *ProfileUpdateOne {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return puo.AddInvitedToIDs(ids...)
+}
+
 // Mutation returns the ProfileMutation object of the builder.
 func (puo *ProfileUpdateOne) Mutation() *ProfileMutation {
 	return puo.mutation
@@ -631,6 +748,27 @@ func (puo *ProfileUpdateOne) RemoveEvents(e ...*Event) *ProfileUpdateOne {
 		ids[i] = e[i].ID
 	}
 	return puo.RemoveEventIDs(ids...)
+}
+
+// ClearInvitedTo clears all "invitedTo" edges to the Event entity.
+func (puo *ProfileUpdateOne) ClearInvitedTo() *ProfileUpdateOne {
+	puo.mutation.ClearInvitedTo()
+	return puo
+}
+
+// RemoveInvitedToIDs removes the "invitedTo" edge to Event entities by IDs.
+func (puo *ProfileUpdateOne) RemoveInvitedToIDs(ids ...int) *ProfileUpdateOne {
+	puo.mutation.RemoveInvitedToIDs(ids...)
+	return puo
+}
+
+// RemoveInvitedTo removes "invitedTo" edges to Event entities.
+func (puo *ProfileUpdateOne) RemoveInvitedTo(e ...*Event) *ProfileUpdateOne {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return puo.RemoveInvitedToIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -889,6 +1027,72 @@ func (puo *ProfileUpdateOne) sqlSave(ctx context.Context) (_node *Profile, err e
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		createE := &MemberCreate{config: puo.config, mutation: newMemberMutation(puo.config, OpCreate)}
+		createE.defaults()
+		_, specE := createE.createSpec()
+		edge.Target.Fields = specE.Fields
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if puo.mutation.InvitedToCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   profile.InvitedToTable,
+			Columns: profile.InvitedToPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: event.FieldID,
+				},
+			},
+		}
+		createE := &EventInviteCreate{config: puo.config, mutation: newEventInviteMutation(puo.config, OpCreate)}
+		createE.defaults()
+		_, specE := createE.createSpec()
+		edge.Target.Fields = specE.Fields
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.RemovedInvitedToIDs(); len(nodes) > 0 && !puo.mutation.InvitedToCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   profile.InvitedToTable,
+			Columns: profile.InvitedToPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: event.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		createE := &EventInviteCreate{config: puo.config, mutation: newEventInviteMutation(puo.config, OpCreate)}
+		createE.defaults()
+		_, specE := createE.createSpec()
+		edge.Target.Fields = specE.Fields
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.InvitedToIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   profile.InvitedToTable,
+			Columns: profile.InvitedToPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: event.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		createE := &EventInviteCreate{config: puo.config, mutation: newEventInviteMutation(puo.config, OpCreate)}
 		createE.defaults()
 		_, specE := createE.createSpec()
 		edge.Target.Fields = specE.Fields

@@ -18,6 +18,8 @@ type Tx struct {
 	Booking *BookingClient
 	// Event is the client for interacting with the Event builders.
 	Event *EventClient
+	// EventInvite is the client for interacting with the EventInvite builders.
+	EventInvite *EventInviteClient
 	// Friend is the client for interacting with the Friend builders.
 	Friend *FriendClient
 	// Member is the client for interacting with the Member builders.
@@ -160,6 +162,7 @@ func (tx *Tx) init() {
 	tx.AvailableRoom = NewAvailableRoomClient(tx.config)
 	tx.Booking = NewBookingClient(tx.config)
 	tx.Event = NewEventClient(tx.config)
+	tx.EventInvite = NewEventInviteClient(tx.config)
 	tx.Friend = NewFriendClient(tx.config)
 	tx.Member = NewMemberClient(tx.config)
 	tx.Profile = NewProfileClient(tx.config)

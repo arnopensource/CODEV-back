@@ -121,6 +121,21 @@ func (pc *ProfileCreate) AddEvents(e ...*Event) *ProfileCreate {
 	return pc.AddEventIDs(ids...)
 }
 
+// AddInvitedToIDs adds the "invitedTo" edge to the Event entity by IDs.
+func (pc *ProfileCreate) AddInvitedToIDs(ids ...int) *ProfileCreate {
+	pc.mutation.AddInvitedToIDs(ids...)
+	return pc
+}
+
+// AddInvitedTo adds the "invitedTo" edges to the Event entity.
+func (pc *ProfileCreate) AddInvitedTo(e ...*Event) *ProfileCreate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return pc.AddInvitedToIDs(ids...)
+}
+
 // Mutation returns the ProfileMutation object of the builder.
 func (pc *ProfileCreate) Mutation() *ProfileMutation {
 	return pc.mutation
@@ -271,6 +286,29 @@ func (pc *ProfileCreate) createSpec() (*Profile, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		createE := &MemberCreate{config: pc.config, mutation: newMemberMutation(pc.config, OpCreate)}
+		createE.defaults()
+		_, specE := createE.createSpec()
+		edge.Target.Fields = specE.Fields
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := pc.mutation.InvitedToIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   profile.InvitedToTable,
+			Columns: profile.InvitedToPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: event.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		createE := &EventInviteCreate{config: pc.config, mutation: newEventInviteMutation(pc.config, OpCreate)}
 		createE.defaults()
 		_, specE := createE.createSpec()
 		edge.Target.Fields = specE.Fields

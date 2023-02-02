@@ -80,6 +80,32 @@ var (
 			},
 		},
 	}
+	// EventInvitesColumns holds the columns for the "event_invites" table.
+	EventInvitesColumns = []*schema.Column{
+		{Name: "since", Type: field.TypeTime},
+		{Name: "profile_id", Type: field.TypeUUID},
+		{Name: "event_id", Type: field.TypeInt},
+	}
+	// EventInvitesTable holds the schema information for the "event_invites" table.
+	EventInvitesTable = &schema.Table{
+		Name:       "event_invites",
+		Columns:    EventInvitesColumns,
+		PrimaryKey: []*schema.Column{EventInvitesColumns[2], EventInvitesColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "event_invites_profiles_profile",
+				Columns:    []*schema.Column{EventInvitesColumns[1]},
+				RefColumns: []*schema.Column{ProfilesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "event_invites_events_event",
+				Columns:    []*schema.Column{EventInvitesColumns[2]},
+				RefColumns: []*schema.Column{EventsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// FriendsColumns holds the columns for the "friends" table.
 	FriendsColumns = []*schema.Column{
 		{Name: "since", Type: field.TypeTime},
@@ -166,6 +192,7 @@ var (
 		AvailableRoomsTable,
 		BookingsTable,
 		EventsTable,
+		EventInvitesTable,
 		FriendsTable,
 		MembersTable,
 		ProfilesTable,
@@ -178,6 +205,8 @@ func init() {
 	BookingsTable.ForeignKeys[0].RefTable = ProfilesTable
 	BookingsTable.ForeignKeys[1].RefTable = RoomsTable
 	EventsTable.ForeignKeys[0].RefTable = RoomsTable
+	EventInvitesTable.ForeignKeys[0].RefTable = ProfilesTable
+	EventInvitesTable.ForeignKeys[1].RefTable = EventsTable
 	FriendsTable.ForeignKeys[0].RefTable = ProfilesTable
 	FriendsTable.ForeignKeys[1].RefTable = ProfilesTable
 	MembersTable.ForeignKeys[0].RefTable = ProfilesTable

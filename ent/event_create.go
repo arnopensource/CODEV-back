@@ -73,6 +73,21 @@ func (ec *EventCreate) SetRoom(r *Room) *EventCreate {
 	return ec.SetRoomID(r.ID)
 }
 
+// AddInvitedIDs adds the "invited" edge to the Profile entity by IDs.
+func (ec *EventCreate) AddInvitedIDs(ids ...uuid.UUID) *EventCreate {
+	ec.mutation.AddInvitedIDs(ids...)
+	return ec
+}
+
+// AddInvited adds the "invited" edges to the Profile entity.
+func (ec *EventCreate) AddInvited(p ...*Profile) *EventCreate {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return ec.AddInvitedIDs(ids...)
+}
+
 // Mutation returns the EventMutation object of the builder.
 func (ec *EventCreate) Mutation() *EventMutation {
 	return ec.mutation
@@ -118,9 +133,6 @@ func (ec *EventCreate) check() error {
 	}
 	if _, ok := ec.mutation.End(); !ok {
 		return &ValidationError{Name: "end", err: errors.New(`ent: missing required field "Event.end"`)}
-	}
-	if len(ec.mutation.ProfilesIDs()) == 0 {
-		return &ValidationError{Name: "profiles", err: errors.New(`ent: missing required edge "Event.profiles"`)}
 	}
 	if _, ok := ec.mutation.RoomID(); !ok {
 		return &ValidationError{Name: "room", err: errors.New(`ent: missing required edge "Event.room"`)}
@@ -214,6 +226,29 @@ func (ec *EventCreate) createSpec() (*Event, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.room_events = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := ec.mutation.InvitedIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   event.InvitedTable,
+			Columns: event.InvitedPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: profile.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		createE := &EventInviteCreate{config: ec.config, mutation: newEventInviteMutation(ec.config, OpCreate)}
+		createE.defaults()
+		_, specE := createE.createSpec()
+		edge.Target.Fields = specE.Fields
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

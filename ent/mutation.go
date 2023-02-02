@@ -12,6 +12,7 @@ import (
 	"github.com/abc3354/CODEV-back/ent/availableroom"
 	"github.com/abc3354/CODEV-back/ent/booking"
 	"github.com/abc3354/CODEV-back/ent/event"
+	"github.com/abc3354/CODEV-back/ent/eventinvite"
 	"github.com/abc3354/CODEV-back/ent/friend"
 	"github.com/abc3354/CODEV-back/ent/member"
 	"github.com/abc3354/CODEV-back/ent/predicate"
@@ -35,6 +36,7 @@ const (
 	TypeAvailableRoom = "AvailableRoom"
 	TypeBooking       = "Booking"
 	TypeEvent         = "Event"
+	TypeEventInvite   = "EventInvite"
 	TypeFriend        = "Friend"
 	TypeMember        = "Member"
 	TypeProfile       = "Profile"
@@ -1022,6 +1024,9 @@ type EventMutation struct {
 	clearedprofiles bool
 	room            *int
 	clearedroom     bool
+	invited         map[uuid.UUID]struct{}
+	removedinvited  map[uuid.UUID]struct{}
+	clearedinvited  bool
 	done            bool
 	oldValue        func(context.Context) (*Event, error)
 	predicates      []predicate.Event
@@ -1362,6 +1367,60 @@ func (m *EventMutation) ResetRoom() {
 	m.clearedroom = false
 }
 
+// AddInvitedIDs adds the "invited" edge to the Profile entity by ids.
+func (m *EventMutation) AddInvitedIDs(ids ...uuid.UUID) {
+	if m.invited == nil {
+		m.invited = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.invited[ids[i]] = struct{}{}
+	}
+}
+
+// ClearInvited clears the "invited" edge to the Profile entity.
+func (m *EventMutation) ClearInvited() {
+	m.clearedinvited = true
+}
+
+// InvitedCleared reports if the "invited" edge to the Profile entity was cleared.
+func (m *EventMutation) InvitedCleared() bool {
+	return m.clearedinvited
+}
+
+// RemoveInvitedIDs removes the "invited" edge to the Profile entity by IDs.
+func (m *EventMutation) RemoveInvitedIDs(ids ...uuid.UUID) {
+	if m.removedinvited == nil {
+		m.removedinvited = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.invited, ids[i])
+		m.removedinvited[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedInvited returns the removed IDs of the "invited" edge to the Profile entity.
+func (m *EventMutation) RemovedInvitedIDs() (ids []uuid.UUID) {
+	for id := range m.removedinvited {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// InvitedIDs returns the "invited" edge IDs in the mutation.
+func (m *EventMutation) InvitedIDs() (ids []uuid.UUID) {
+	for id := range m.invited {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetInvited resets all changes to the "invited" edge.
+func (m *EventMutation) ResetInvited() {
+	m.invited = nil
+	m.clearedinvited = false
+	m.removedinvited = nil
+}
+
 // Where appends a list predicates to the EventMutation builder.
 func (m *EventMutation) Where(ps ...predicate.Event) {
 	m.predicates = append(m.predicates, ps...)
@@ -1546,12 +1605,15 @@ func (m *EventMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *EventMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.profiles != nil {
 		edges = append(edges, event.EdgeProfiles)
 	}
 	if m.room != nil {
 		edges = append(edges, event.EdgeRoom)
+	}
+	if m.invited != nil {
+		edges = append(edges, event.EdgeInvited)
 	}
 	return edges
 }
@@ -1570,15 +1632,24 @@ func (m *EventMutation) AddedIDs(name string) []ent.Value {
 		if id := m.room; id != nil {
 			return []ent.Value{*id}
 		}
+	case event.EdgeInvited:
+		ids := make([]ent.Value, 0, len(m.invited))
+		for id := range m.invited {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *EventMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removedprofiles != nil {
 		edges = append(edges, event.EdgeProfiles)
+	}
+	if m.removedinvited != nil {
+		edges = append(edges, event.EdgeInvited)
 	}
 	return edges
 }
@@ -1593,18 +1664,27 @@ func (m *EventMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case event.EdgeInvited:
+		ids := make([]ent.Value, 0, len(m.removedinvited))
+		for id := range m.removedinvited {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *EventMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedprofiles {
 		edges = append(edges, event.EdgeProfiles)
 	}
 	if m.clearedroom {
 		edges = append(edges, event.EdgeRoom)
+	}
+	if m.clearedinvited {
+		edges = append(edges, event.EdgeInvited)
 	}
 	return edges
 }
@@ -1617,6 +1697,8 @@ func (m *EventMutation) EdgeCleared(name string) bool {
 		return m.clearedprofiles
 	case event.EdgeRoom:
 		return m.clearedroom
+	case event.EdgeInvited:
+		return m.clearedinvited
 	}
 	return false
 }
@@ -1642,8 +1724,426 @@ func (m *EventMutation) ResetEdge(name string) error {
 	case event.EdgeRoom:
 		m.ResetRoom()
 		return nil
+	case event.EdgeInvited:
+		m.ResetInvited()
+		return nil
 	}
 	return fmt.Errorf("unknown Event edge %s", name)
+}
+
+// EventInviteMutation represents an operation that mutates the EventInvite nodes in the graph.
+type EventInviteMutation struct {
+	config
+	op             Op
+	typ            string
+	since          *time.Time
+	clearedFields  map[string]struct{}
+	profile        *uuid.UUID
+	clearedprofile bool
+	event          *int
+	clearedevent   bool
+	done           bool
+	oldValue       func(context.Context) (*EventInvite, error)
+	predicates     []predicate.EventInvite
+}
+
+var _ ent.Mutation = (*EventInviteMutation)(nil)
+
+// eventinviteOption allows management of the mutation configuration using functional options.
+type eventinviteOption func(*EventInviteMutation)
+
+// newEventInviteMutation creates new mutation for the EventInvite entity.
+func newEventInviteMutation(c config, op Op, opts ...eventinviteOption) *EventInviteMutation {
+	m := &EventInviteMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeEventInvite,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m EventInviteMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m EventInviteMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetProfileID sets the "profile_id" field.
+func (m *EventInviteMutation) SetProfileID(u uuid.UUID) {
+	m.profile = &u
+}
+
+// ProfileID returns the value of the "profile_id" field in the mutation.
+func (m *EventInviteMutation) ProfileID() (r uuid.UUID, exists bool) {
+	v := m.profile
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetProfileID resets all changes to the "profile_id" field.
+func (m *EventInviteMutation) ResetProfileID() {
+	m.profile = nil
+}
+
+// SetEventID sets the "event_id" field.
+func (m *EventInviteMutation) SetEventID(i int) {
+	m.event = &i
+}
+
+// EventID returns the value of the "event_id" field in the mutation.
+func (m *EventInviteMutation) EventID() (r int, exists bool) {
+	v := m.event
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetEventID resets all changes to the "event_id" field.
+func (m *EventInviteMutation) ResetEventID() {
+	m.event = nil
+}
+
+// SetSince sets the "since" field.
+func (m *EventInviteMutation) SetSince(t time.Time) {
+	m.since = &t
+}
+
+// Since returns the value of the "since" field in the mutation.
+func (m *EventInviteMutation) Since() (r time.Time, exists bool) {
+	v := m.since
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSince resets all changes to the "since" field.
+func (m *EventInviteMutation) ResetSince() {
+	m.since = nil
+}
+
+// ClearProfile clears the "profile" edge to the Profile entity.
+func (m *EventInviteMutation) ClearProfile() {
+	m.clearedprofile = true
+}
+
+// ProfileCleared reports if the "profile" edge to the Profile entity was cleared.
+func (m *EventInviteMutation) ProfileCleared() bool {
+	return m.clearedprofile
+}
+
+// ProfileIDs returns the "profile" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ProfileID instead. It exists only for internal usage by the builders.
+func (m *EventInviteMutation) ProfileIDs() (ids []uuid.UUID) {
+	if id := m.profile; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetProfile resets all changes to the "profile" edge.
+func (m *EventInviteMutation) ResetProfile() {
+	m.profile = nil
+	m.clearedprofile = false
+}
+
+// ClearEvent clears the "event" edge to the Event entity.
+func (m *EventInviteMutation) ClearEvent() {
+	m.clearedevent = true
+}
+
+// EventCleared reports if the "event" edge to the Event entity was cleared.
+func (m *EventInviteMutation) EventCleared() bool {
+	return m.clearedevent
+}
+
+// EventIDs returns the "event" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// EventID instead. It exists only for internal usage by the builders.
+func (m *EventInviteMutation) EventIDs() (ids []int) {
+	if id := m.event; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetEvent resets all changes to the "event" edge.
+func (m *EventInviteMutation) ResetEvent() {
+	m.event = nil
+	m.clearedevent = false
+}
+
+// Where appends a list predicates to the EventInviteMutation builder.
+func (m *EventInviteMutation) Where(ps ...predicate.EventInvite) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the EventInviteMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *EventInviteMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.EventInvite, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *EventInviteMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *EventInviteMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (EventInvite).
+func (m *EventInviteMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *EventInviteMutation) Fields() []string {
+	fields := make([]string, 0, 3)
+	if m.profile != nil {
+		fields = append(fields, eventinvite.FieldProfileID)
+	}
+	if m.event != nil {
+		fields = append(fields, eventinvite.FieldEventID)
+	}
+	if m.since != nil {
+		fields = append(fields, eventinvite.FieldSince)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *EventInviteMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case eventinvite.FieldProfileID:
+		return m.ProfileID()
+	case eventinvite.FieldEventID:
+		return m.EventID()
+	case eventinvite.FieldSince:
+		return m.Since()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *EventInviteMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	return nil, errors.New("edge schema EventInvite does not support getting old values")
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *EventInviteMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case eventinvite.FieldProfileID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProfileID(v)
+		return nil
+	case eventinvite.FieldEventID:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEventID(v)
+		return nil
+	case eventinvite.FieldSince:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSince(v)
+		return nil
+	}
+	return fmt.Errorf("unknown EventInvite field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *EventInviteMutation) AddedFields() []string {
+	var fields []string
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *EventInviteMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *EventInviteMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown EventInvite numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *EventInviteMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *EventInviteMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *EventInviteMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown EventInvite nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *EventInviteMutation) ResetField(name string) error {
+	switch name {
+	case eventinvite.FieldProfileID:
+		m.ResetProfileID()
+		return nil
+	case eventinvite.FieldEventID:
+		m.ResetEventID()
+		return nil
+	case eventinvite.FieldSince:
+		m.ResetSince()
+		return nil
+	}
+	return fmt.Errorf("unknown EventInvite field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *EventInviteMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.profile != nil {
+		edges = append(edges, eventinvite.EdgeProfile)
+	}
+	if m.event != nil {
+		edges = append(edges, eventinvite.EdgeEvent)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *EventInviteMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case eventinvite.EdgeProfile:
+		if id := m.profile; id != nil {
+			return []ent.Value{*id}
+		}
+	case eventinvite.EdgeEvent:
+		if id := m.event; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *EventInviteMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *EventInviteMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *EventInviteMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedprofile {
+		edges = append(edges, eventinvite.EdgeProfile)
+	}
+	if m.clearedevent {
+		edges = append(edges, eventinvite.EdgeEvent)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *EventInviteMutation) EdgeCleared(name string) bool {
+	switch name {
+	case eventinvite.EdgeProfile:
+		return m.clearedprofile
+	case eventinvite.EdgeEvent:
+		return m.clearedevent
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *EventInviteMutation) ClearEdge(name string) error {
+	switch name {
+	case eventinvite.EdgeProfile:
+		m.ClearProfile()
+		return nil
+	case eventinvite.EdgeEvent:
+		m.ClearEvent()
+		return nil
+	}
+	return fmt.Errorf("unknown EventInvite unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *EventInviteMutation) ResetEdge(name string) error {
+	switch name {
+	case eventinvite.EdgeProfile:
+		m.ResetProfile()
+		return nil
+	case eventinvite.EdgeEvent:
+		m.ResetEvent()
+		return nil
+	}
+	return fmt.Errorf("unknown EventInvite edge %s", name)
 }
 
 // FriendMutation represents an operation that mutates the Friend nodes in the graph.
@@ -2511,26 +3011,29 @@ func (m *MemberMutation) ResetEdge(name string) error {
 // ProfileMutation represents an operation that mutates the Profile nodes in the graph.
 type ProfileMutation struct {
 	config
-	op              Op
-	typ             string
-	id              *uuid.UUID
-	firstname       *string
-	lastname        *string
-	phone           *string
-	email           *string
-	clearedFields   map[string]struct{}
-	friends         map[uuid.UUID]struct{}
-	removedfriends  map[uuid.UUID]struct{}
-	clearedfriends  bool
-	bookings        map[int]struct{}
-	removedbookings map[int]struct{}
-	clearedbookings bool
-	events          map[int]struct{}
-	removedevents   map[int]struct{}
-	clearedevents   bool
-	done            bool
-	oldValue        func(context.Context) (*Profile, error)
-	predicates      []predicate.Profile
+	op               Op
+	typ              string
+	id               *uuid.UUID
+	firstname        *string
+	lastname         *string
+	phone            *string
+	email            *string
+	clearedFields    map[string]struct{}
+	friends          map[uuid.UUID]struct{}
+	removedfriends   map[uuid.UUID]struct{}
+	clearedfriends   bool
+	bookings         map[int]struct{}
+	removedbookings  map[int]struct{}
+	clearedbookings  bool
+	events           map[int]struct{}
+	removedevents    map[int]struct{}
+	clearedevents    bool
+	invitedTo        map[int]struct{}
+	removedinvitedTo map[int]struct{}
+	clearedinvitedTo bool
+	done             bool
+	oldValue         func(context.Context) (*Profile, error)
+	predicates       []predicate.Profile
 }
 
 var _ ent.Mutation = (*ProfileMutation)(nil)
@@ -2982,6 +3485,60 @@ func (m *ProfileMutation) ResetEvents() {
 	m.removedevents = nil
 }
 
+// AddInvitedToIDs adds the "invitedTo" edge to the Event entity by ids.
+func (m *ProfileMutation) AddInvitedToIDs(ids ...int) {
+	if m.invitedTo == nil {
+		m.invitedTo = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.invitedTo[ids[i]] = struct{}{}
+	}
+}
+
+// ClearInvitedTo clears the "invitedTo" edge to the Event entity.
+func (m *ProfileMutation) ClearInvitedTo() {
+	m.clearedinvitedTo = true
+}
+
+// InvitedToCleared reports if the "invitedTo" edge to the Event entity was cleared.
+func (m *ProfileMutation) InvitedToCleared() bool {
+	return m.clearedinvitedTo
+}
+
+// RemoveInvitedToIDs removes the "invitedTo" edge to the Event entity by IDs.
+func (m *ProfileMutation) RemoveInvitedToIDs(ids ...int) {
+	if m.removedinvitedTo == nil {
+		m.removedinvitedTo = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.invitedTo, ids[i])
+		m.removedinvitedTo[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedInvitedTo returns the removed IDs of the "invitedTo" edge to the Event entity.
+func (m *ProfileMutation) RemovedInvitedToIDs() (ids []int) {
+	for id := range m.removedinvitedTo {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// InvitedToIDs returns the "invitedTo" edge IDs in the mutation.
+func (m *ProfileMutation) InvitedToIDs() (ids []int) {
+	for id := range m.invitedTo {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetInvitedTo resets all changes to the "invitedTo" edge.
+func (m *ProfileMutation) ResetInvitedTo() {
+	m.invitedTo = nil
+	m.clearedinvitedTo = false
+	m.removedinvitedTo = nil
+}
+
 // Where appends a list predicates to the ProfileMutation builder.
 func (m *ProfileMutation) Where(ps ...predicate.Profile) {
 	m.predicates = append(m.predicates, ps...)
@@ -3187,7 +3744,7 @@ func (m *ProfileMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ProfileMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.friends != nil {
 		edges = append(edges, profile.EdgeFriends)
 	}
@@ -3196,6 +3753,9 @@ func (m *ProfileMutation) AddedEdges() []string {
 	}
 	if m.events != nil {
 		edges = append(edges, profile.EdgeEvents)
+	}
+	if m.invitedTo != nil {
+		edges = append(edges, profile.EdgeInvitedTo)
 	}
 	return edges
 }
@@ -3222,13 +3782,19 @@ func (m *ProfileMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case profile.EdgeInvitedTo:
+		ids := make([]ent.Value, 0, len(m.invitedTo))
+		for id := range m.invitedTo {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ProfileMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedfriends != nil {
 		edges = append(edges, profile.EdgeFriends)
 	}
@@ -3237,6 +3803,9 @@ func (m *ProfileMutation) RemovedEdges() []string {
 	}
 	if m.removedevents != nil {
 		edges = append(edges, profile.EdgeEvents)
+	}
+	if m.removedinvitedTo != nil {
+		edges = append(edges, profile.EdgeInvitedTo)
 	}
 	return edges
 }
@@ -3263,13 +3832,19 @@ func (m *ProfileMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case profile.EdgeInvitedTo:
+		ids := make([]ent.Value, 0, len(m.removedinvitedTo))
+		for id := range m.removedinvitedTo {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ProfileMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedfriends {
 		edges = append(edges, profile.EdgeFriends)
 	}
@@ -3278,6 +3853,9 @@ func (m *ProfileMutation) ClearedEdges() []string {
 	}
 	if m.clearedevents {
 		edges = append(edges, profile.EdgeEvents)
+	}
+	if m.clearedinvitedTo {
+		edges = append(edges, profile.EdgeInvitedTo)
 	}
 	return edges
 }
@@ -3292,6 +3870,8 @@ func (m *ProfileMutation) EdgeCleared(name string) bool {
 		return m.clearedbookings
 	case profile.EdgeEvents:
 		return m.clearedevents
+	case profile.EdgeInvitedTo:
+		return m.clearedinvitedTo
 	}
 	return false
 }
@@ -3316,6 +3896,9 @@ func (m *ProfileMutation) ResetEdge(name string) error {
 		return nil
 	case profile.EdgeEvents:
 		m.ResetEvents()
+		return nil
+	case profile.EdgeInvitedTo:
+		m.ResetInvitedTo()
 		return nil
 	}
 	return fmt.Errorf("unknown Profile edge %s", name)

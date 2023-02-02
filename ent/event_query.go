@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/abc3354/CODEV-back/ent/event"
+	"github.com/abc3354/CODEV-back/ent/eventinvite"
 	"github.com/abc3354/CODEV-back/ent/member"
 	"github.com/abc3354/CODEV-back/ent/predicate"
 	"github.com/abc3354/CODEV-back/ent/profile"
@@ -31,7 +32,9 @@ type EventQuery struct {
 	predicates   []predicate.Event
 	withProfiles *ProfileQuery
 	withRoom     *RoomQuery
+	withInvited  *ProfileQuery
 	withMembers  *MemberQuery
+	withInvites  *EventInviteQuery
 	withFKs      bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -113,6 +116,28 @@ func (eq *EventQuery) QueryRoom() *RoomQuery {
 	return query
 }
 
+// QueryInvited chains the current query on the "invited" edge.
+func (eq *EventQuery) QueryInvited() *ProfileQuery {
+	query := (&ProfileClient{config: eq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := eq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := eq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(event.Table, event.FieldID, selector),
+			sqlgraph.To(profile.Table, profile.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, event.InvitedTable, event.InvitedPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(eq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
 // QueryMembers chains the current query on the "members" edge.
 func (eq *EventQuery) QueryMembers() *MemberQuery {
 	query := (&MemberClient{config: eq.config}).Query()
@@ -128,6 +153,28 @@ func (eq *EventQuery) QueryMembers() *MemberQuery {
 			sqlgraph.From(event.Table, event.FieldID, selector),
 			sqlgraph.To(member.Table, member.EventColumn),
 			sqlgraph.Edge(sqlgraph.O2M, true, event.MembersTable, event.MembersColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(eq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryInvites chains the current query on the "invites" edge.
+func (eq *EventQuery) QueryInvites() *EventInviteQuery {
+	query := (&EventInviteClient{config: eq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := eq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := eq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(event.Table, event.FieldID, selector),
+			sqlgraph.To(eventinvite.Table, eventinvite.EventColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, event.InvitesTable, event.InvitesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(eq.driver.Dialect(), step)
 		return fromU, nil
@@ -328,7 +375,9 @@ func (eq *EventQuery) Clone() *EventQuery {
 		predicates:   append([]predicate.Event{}, eq.predicates...),
 		withProfiles: eq.withProfiles.Clone(),
 		withRoom:     eq.withRoom.Clone(),
+		withInvited:  eq.withInvited.Clone(),
 		withMembers:  eq.withMembers.Clone(),
+		withInvites:  eq.withInvites.Clone(),
 		// clone intermediate query.
 		sql:    eq.sql.Clone(),
 		path:   eq.path,
@@ -358,6 +407,17 @@ func (eq *EventQuery) WithRoom(opts ...func(*RoomQuery)) *EventQuery {
 	return eq
 }
 
+// WithInvited tells the query-builder to eager-load the nodes that are connected to
+// the "invited" edge. The optional arguments are used to configure the query builder of the edge.
+func (eq *EventQuery) WithInvited(opts ...func(*ProfileQuery)) *EventQuery {
+	query := (&ProfileClient{config: eq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	eq.withInvited = query
+	return eq
+}
+
 // WithMembers tells the query-builder to eager-load the nodes that are connected to
 // the "members" edge. The optional arguments are used to configure the query builder of the edge.
 func (eq *EventQuery) WithMembers(opts ...func(*MemberQuery)) *EventQuery {
@@ -366,6 +426,17 @@ func (eq *EventQuery) WithMembers(opts ...func(*MemberQuery)) *EventQuery {
 		opt(query)
 	}
 	eq.withMembers = query
+	return eq
+}
+
+// WithInvites tells the query-builder to eager-load the nodes that are connected to
+// the "invites" edge. The optional arguments are used to configure the query builder of the edge.
+func (eq *EventQuery) WithInvites(opts ...func(*EventInviteQuery)) *EventQuery {
+	query := (&EventInviteClient{config: eq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	eq.withInvites = query
 	return eq
 }
 
@@ -448,10 +519,12 @@ func (eq *EventQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Event,
 		nodes       = []*Event{}
 		withFKs     = eq.withFKs
 		_spec       = eq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [5]bool{
 			eq.withProfiles != nil,
 			eq.withRoom != nil,
+			eq.withInvited != nil,
 			eq.withMembers != nil,
+			eq.withInvites != nil,
 		}
 	)
 	if eq.withRoom != nil {
@@ -491,10 +564,24 @@ func (eq *EventQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Event,
 			return nil, err
 		}
 	}
+	if query := eq.withInvited; query != nil {
+		if err := eq.loadInvited(ctx, query, nodes,
+			func(n *Event) { n.Edges.Invited = []*Profile{} },
+			func(n *Event, e *Profile) { n.Edges.Invited = append(n.Edges.Invited, e) }); err != nil {
+			return nil, err
+		}
+	}
 	if query := eq.withMembers; query != nil {
 		if err := eq.loadMembers(ctx, query, nodes,
 			func(n *Event) { n.Edges.Members = []*Member{} },
 			func(n *Event, e *Member) { n.Edges.Members = append(n.Edges.Members, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := eq.withInvites; query != nil {
+		if err := eq.loadInvites(ctx, query, nodes,
+			func(n *Event) { n.Edges.Invites = []*EventInvite{} },
+			func(n *Event, e *EventInvite) { n.Edges.Invites = append(n.Edges.Invites, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -588,6 +675,64 @@ func (eq *EventQuery) loadRoom(ctx context.Context, query *RoomQuery, nodes []*E
 	}
 	return nil
 }
+func (eq *EventQuery) loadInvited(ctx context.Context, query *ProfileQuery, nodes []*Event, init func(*Event), assign func(*Event, *Profile)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[int]*Event)
+	nids := make(map[uuid.UUID]map[*Event]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(event.InvitedTable)
+		s.Join(joinT).On(s.C(profile.FieldID), joinT.C(event.InvitedPrimaryKey[1]))
+		s.Where(sql.InValues(joinT.C(event.InvitedPrimaryKey[0]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(event.InvitedPrimaryKey[0]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	neighbors, err := query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+		assign := spec.Assign
+		values := spec.ScanValues
+		spec.ScanValues = func(columns []string) ([]any, error) {
+			values, err := values(columns[1:])
+			if err != nil {
+				return nil, err
+			}
+			return append([]any{new(sql.NullInt64)}, values...), nil
+		}
+		spec.Assign = func(columns []string, values []any) error {
+			outValue := int(values[0].(*sql.NullInt64).Int64)
+			inValue := *values[1].(*uuid.UUID)
+			if nids[inValue] == nil {
+				nids[inValue] = map[*Event]struct{}{byID[outValue]: {}}
+				return assign(columns[1:], values[1:])
+			}
+			nids[inValue][byID[outValue]] = struct{}{}
+			return nil
+		}
+	})
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "invited" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
+	}
+	return nil
+}
 func (eq *EventQuery) loadMembers(ctx context.Context, query *MemberQuery, nodes []*Event, init func(*Event), assign func(*Event, *Member)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[int]*Event)
@@ -600,6 +745,33 @@ func (eq *EventQuery) loadMembers(ctx context.Context, query *MemberQuery, nodes
 	}
 	query.Where(predicate.Member(func(s *sql.Selector) {
 		s.Where(sql.InValues(event.MembersColumn, fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.EventID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "event_id" returned %v for node %v`, fk, n)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (eq *EventQuery) loadInvites(ctx context.Context, query *EventInviteQuery, nodes []*Event, init func(*Event), assign func(*Event, *EventInvite)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Event)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.Where(predicate.EventInvite(func(s *sql.Selector) {
+		s.Where(sql.InValues(event.InvitesColumn, fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

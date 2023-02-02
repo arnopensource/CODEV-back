@@ -14,6 +14,7 @@ import (
 	"github.com/abc3354/CODEV-back/ent/availableroom"
 	"github.com/abc3354/CODEV-back/ent/booking"
 	"github.com/abc3354/CODEV-back/ent/event"
+	"github.com/abc3354/CODEV-back/ent/eventinvite"
 	"github.com/abc3354/CODEV-back/ent/friend"
 	"github.com/abc3354/CODEV-back/ent/member"
 	"github.com/abc3354/CODEV-back/ent/profile"
@@ -47,6 +48,7 @@ func columnChecker(table string) func(string) error {
 		availableroom.Table: availableroom.ValidColumn,
 		booking.Table:       booking.ValidColumn,
 		event.Table:         event.ValidColumn,
+		eventinvite.Table:   eventinvite.ValidColumn,
 		friend.Table:        friend.ValidColumn,
 		member.Table:        member.ValidColumn,
 		profile.Table:       profile.ValidColumn,
