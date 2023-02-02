@@ -101,3 +101,21 @@ func checkMember(eventId int, userId uuid.UUID, c context.Context) (bool, error)
 		return false, err
 	}
 }
+
+func GetMyInvites(c *gin.Context) {
+	user, err := checkToken(c)
+	if err != nil {
+		c.AbortWithError(http.StatusUnauthorized, err)
+		return
+	}
+
+	client := ent.Get()
+
+	invites, err := client.EventInvite.Query().Where(eventinvite.ProfileID(user.ID)).WithEvent().All(c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, invites)
+}

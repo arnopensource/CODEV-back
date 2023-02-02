@@ -50,7 +50,7 @@ func main() {
 	r.DELETE("/events/:id", handlers.CancelEvent)
 
 	r.POST("/events/invites", handlers.SendInvite)
-	r.GET("/events/invites", nil)
+	r.GET("/events/invites", handlers.GetMyInvites)
 	r.PUT("/events/invites/{id}", nil)
 	r.DELETE("/events/invites/{id}", nil)
 	r.GET("/events/{id}/invites", nil)
