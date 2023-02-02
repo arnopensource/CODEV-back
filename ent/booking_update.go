@@ -43,16 +43,16 @@ func (bu *BookingUpdate) SetRoomID(i int) *BookingUpdate {
 	return bu
 }
 
-// SetNumber sets the "number" field.
-func (bu *BookingUpdate) SetNumber(i int) *BookingUpdate {
-	bu.mutation.ResetNumber()
-	bu.mutation.SetNumber(i)
+// SetNumberOfPeople sets the "number_of_people" field.
+func (bu *BookingUpdate) SetNumberOfPeople(i int) *BookingUpdate {
+	bu.mutation.ResetNumberOfPeople()
+	bu.mutation.SetNumberOfPeople(i)
 	return bu
 }
 
-// AddNumber adds i to the "number" field.
-func (bu *BookingUpdate) AddNumber(i int) *BookingUpdate {
-	bu.mutation.AddNumber(i)
+// AddNumberOfPeople adds i to the "number_of_people" field.
+func (bu *BookingUpdate) AddNumberOfPeople(i int) *BookingUpdate {
+	bu.mutation.AddNumberOfPeople(i)
 	return bu
 }
 
@@ -160,11 +160,11 @@ func (bu *BookingUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
-	if value, ok := bu.mutation.Number(); ok {
-		_spec.SetField(booking.FieldNumber, field.TypeInt, value)
+	if value, ok := bu.mutation.NumberOfPeople(); ok {
+		_spec.SetField(booking.FieldNumberOfPeople, field.TypeInt, value)
 	}
-	if value, ok := bu.mutation.AddedNumber(); ok {
-		_spec.AddField(booking.FieldNumber, field.TypeInt, value)
+	if value, ok := bu.mutation.AddedNumberOfPeople(); ok {
+		_spec.AddField(booking.FieldNumberOfPeople, field.TypeInt, value)
 	}
 	if value, ok := bu.mutation.Start(); ok {
 		_spec.SetField(booking.FieldStart, field.TypeTime, value)
@@ -274,16 +274,16 @@ func (buo *BookingUpdateOne) SetRoomID(i int) *BookingUpdateOne {
 	return buo
 }
 
-// SetNumber sets the "number" field.
-func (buo *BookingUpdateOne) SetNumber(i int) *BookingUpdateOne {
-	buo.mutation.ResetNumber()
-	buo.mutation.SetNumber(i)
+// SetNumberOfPeople sets the "number_of_people" field.
+func (buo *BookingUpdateOne) SetNumberOfPeople(i int) *BookingUpdateOne {
+	buo.mutation.ResetNumberOfPeople()
+	buo.mutation.SetNumberOfPeople(i)
 	return buo
 }
 
-// AddNumber adds i to the "number" field.
-func (buo *BookingUpdateOne) AddNumber(i int) *BookingUpdateOne {
-	buo.mutation.AddNumber(i)
+// AddNumberOfPeople adds i to the "number_of_people" field.
+func (buo *BookingUpdateOne) AddNumberOfPeople(i int) *BookingUpdateOne {
+	buo.mutation.AddNumberOfPeople(i)
 	return buo
 }
 
@@ -417,11 +417,11 @@ func (buo *BookingUpdateOne) sqlSave(ctx context.Context) (_node *Booking, err e
 			}
 		}
 	}
-	if value, ok := buo.mutation.Number(); ok {
-		_spec.SetField(booking.FieldNumber, field.TypeInt, value)
+	if value, ok := buo.mutation.NumberOfPeople(); ok {
+		_spec.SetField(booking.FieldNumberOfPeople, field.TypeInt, value)
 	}
-	if value, ok := buo.mutation.AddedNumber(); ok {
-		_spec.AddField(booking.FieldNumber, field.TypeInt, value)
+	if value, ok := buo.mutation.AddedNumberOfPeople(); ok {
+		_spec.AddField(booking.FieldNumberOfPeople, field.TypeInt, value)
 	}
 	if value, ok := buo.mutation.Start(); ok {
 		_spec.SetField(booking.FieldStart, field.TypeTime, value)

@@ -35,9 +35,9 @@ func (bc *BookingCreate) SetRoomID(i int) *BookingCreate {
 	return bc
 }
 
-// SetNumber sets the "number" field.
-func (bc *BookingCreate) SetNumber(i int) *BookingCreate {
-	bc.mutation.SetNumber(i)
+// SetNumberOfPeople sets the "number_of_people" field.
+func (bc *BookingCreate) SetNumberOfPeople(i int) *BookingCreate {
+	bc.mutation.SetNumberOfPeople(i)
 	return bc
 }
 
@@ -103,8 +103,8 @@ func (bc *BookingCreate) check() error {
 	if _, ok := bc.mutation.RoomID(); !ok {
 		return &ValidationError{Name: "room_id", err: errors.New(`ent: missing required field "Booking.room_id"`)}
 	}
-	if _, ok := bc.mutation.Number(); !ok {
-		return &ValidationError{Name: "number", err: errors.New(`ent: missing required field "Booking.number"`)}
+	if _, ok := bc.mutation.NumberOfPeople(); !ok {
+		return &ValidationError{Name: "number_of_people", err: errors.New(`ent: missing required field "Booking.number_of_people"`)}
 	}
 	if _, ok := bc.mutation.Start(); !ok {
 		return &ValidationError{Name: "start", err: errors.New(`ent: missing required field "Booking.start"`)}
@@ -142,9 +142,9 @@ func (bc *BookingCreate) createSpec() (*Booking, *sqlgraph.CreateSpec) {
 			Table: booking.Table,
 		}
 	)
-	if value, ok := bc.mutation.Number(); ok {
-		_spec.SetField(booking.FieldNumber, field.TypeInt, value)
-		_node.Number = value
+	if value, ok := bc.mutation.NumberOfPeople(); ok {
+		_spec.SetField(booking.FieldNumberOfPeople, field.TypeInt, value)
+		_node.NumberOfPeople = value
 	}
 	if value, ok := bc.mutation.Start(); ok {
 		_spec.SetField(booking.FieldStart, field.TypeTime, value)

@@ -20,9 +20,9 @@ type Booking struct {
 	// ProfileID holds the value of the "profile_id" field.
 	ProfileID uuid.UUID `json:"profile_id,omitempty"`
 	// RoomID holds the value of the "room_id" field.
-	RoomID int `json:"room_id,omitempty"`
-	// Number holds the value of the "number" field.
-	Number int `json:"number,omitempty"`
+	RoomID int `json:"roomId"`
+	// NumberOfPeople holds the value of the "number_of_people" field.
+	NumberOfPeople int `json:"numberOfPeople"`
 	// Start holds the value of the "start" field.
 	Start time.Time `json:"start,omitempty"`
 	// End holds the value of the "end" field.
@@ -74,7 +74,7 @@ func (*Booking) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case booking.FieldRoomID, booking.FieldNumber:
+		case booking.FieldRoomID, booking.FieldNumberOfPeople:
 			values[i] = new(sql.NullInt64)
 		case booking.FieldStart, booking.FieldEnd:
 			values[i] = new(sql.NullTime)
@@ -107,11 +107,11 @@ func (b *Booking) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				b.RoomID = int(value.Int64)
 			}
-		case booking.FieldNumber:
+		case booking.FieldNumberOfPeople:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field number", values[i])
+				return fmt.Errorf("unexpected type %T for field number_of_people", values[i])
 			} else if value.Valid {
-				b.Number = int(value.Int64)
+				b.NumberOfPeople = int(value.Int64)
 			}
 		case booking.FieldStart:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -168,8 +168,8 @@ func (b *Booking) String() string {
 	builder.WriteString("room_id=")
 	builder.WriteString(fmt.Sprintf("%v", b.RoomID))
 	builder.WriteString(", ")
-	builder.WriteString("number=")
-	builder.WriteString(fmt.Sprintf("%v", b.Number))
+	builder.WriteString("number_of_people=")
+	builder.WriteString(fmt.Sprintf("%v", b.NumberOfPeople))
 	builder.WriteString(", ")
 	builder.WriteString("start=")
 	builder.WriteString(b.Start.Format(time.ANSIC))

@@ -21,9 +21,9 @@ func RoomID(v int) predicate.Booking {
 	return predicate.Booking(sql.FieldEQ(FieldRoomID, v))
 }
 
-// Number applies equality check predicate on the "number" field. It's identical to NumberEQ.
-func Number(v int) predicate.Booking {
-	return predicate.Booking(sql.FieldEQ(FieldNumber, v))
+// NumberOfPeople applies equality check predicate on the "number_of_people" field. It's identical to NumberOfPeopleEQ.
+func NumberOfPeople(v int) predicate.Booking {
+	return predicate.Booking(sql.FieldEQ(FieldNumberOfPeople, v))
 }
 
 // Start applies equality check predicate on the "start" field. It's identical to StartEQ.
@@ -76,44 +76,44 @@ func RoomIDNotIn(vs ...int) predicate.Booking {
 	return predicate.Booking(sql.FieldNotIn(FieldRoomID, vs...))
 }
 
-// NumberEQ applies the EQ predicate on the "number" field.
-func NumberEQ(v int) predicate.Booking {
-	return predicate.Booking(sql.FieldEQ(FieldNumber, v))
+// NumberOfPeopleEQ applies the EQ predicate on the "number_of_people" field.
+func NumberOfPeopleEQ(v int) predicate.Booking {
+	return predicate.Booking(sql.FieldEQ(FieldNumberOfPeople, v))
 }
 
-// NumberNEQ applies the NEQ predicate on the "number" field.
-func NumberNEQ(v int) predicate.Booking {
-	return predicate.Booking(sql.FieldNEQ(FieldNumber, v))
+// NumberOfPeopleNEQ applies the NEQ predicate on the "number_of_people" field.
+func NumberOfPeopleNEQ(v int) predicate.Booking {
+	return predicate.Booking(sql.FieldNEQ(FieldNumberOfPeople, v))
 }
 
-// NumberIn applies the In predicate on the "number" field.
-func NumberIn(vs ...int) predicate.Booking {
-	return predicate.Booking(sql.FieldIn(FieldNumber, vs...))
+// NumberOfPeopleIn applies the In predicate on the "number_of_people" field.
+func NumberOfPeopleIn(vs ...int) predicate.Booking {
+	return predicate.Booking(sql.FieldIn(FieldNumberOfPeople, vs...))
 }
 
-// NumberNotIn applies the NotIn predicate on the "number" field.
-func NumberNotIn(vs ...int) predicate.Booking {
-	return predicate.Booking(sql.FieldNotIn(FieldNumber, vs...))
+// NumberOfPeopleNotIn applies the NotIn predicate on the "number_of_people" field.
+func NumberOfPeopleNotIn(vs ...int) predicate.Booking {
+	return predicate.Booking(sql.FieldNotIn(FieldNumberOfPeople, vs...))
 }
 
-// NumberGT applies the GT predicate on the "number" field.
-func NumberGT(v int) predicate.Booking {
-	return predicate.Booking(sql.FieldGT(FieldNumber, v))
+// NumberOfPeopleGT applies the GT predicate on the "number_of_people" field.
+func NumberOfPeopleGT(v int) predicate.Booking {
+	return predicate.Booking(sql.FieldGT(FieldNumberOfPeople, v))
 }
 
-// NumberGTE applies the GTE predicate on the "number" field.
-func NumberGTE(v int) predicate.Booking {
-	return predicate.Booking(sql.FieldGTE(FieldNumber, v))
+// NumberOfPeopleGTE applies the GTE predicate on the "number_of_people" field.
+func NumberOfPeopleGTE(v int) predicate.Booking {
+	return predicate.Booking(sql.FieldGTE(FieldNumberOfPeople, v))
 }
 
-// NumberLT applies the LT predicate on the "number" field.
-func NumberLT(v int) predicate.Booking {
-	return predicate.Booking(sql.FieldLT(FieldNumber, v))
+// NumberOfPeopleLT applies the LT predicate on the "number_of_people" field.
+func NumberOfPeopleLT(v int) predicate.Booking {
+	return predicate.Booking(sql.FieldLT(FieldNumberOfPeople, v))
 }
 
-// NumberLTE applies the LTE predicate on the "number" field.
-func NumberLTE(v int) predicate.Booking {
-	return predicate.Booking(sql.FieldLTE(FieldNumber, v))
+// NumberOfPeopleLTE applies the LTE predicate on the "number_of_people" field.
+func NumberOfPeopleLTE(v int) predicate.Booking {
+	return predicate.Booking(sql.FieldLTE(FieldNumberOfPeople, v))
 }
 
 // StartEQ applies the EQ predicate on the "start" field.

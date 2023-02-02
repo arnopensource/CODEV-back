@@ -75,7 +75,7 @@ func CreateBooking(c *gin.Context) {
 		SetProfileID(user.ID).
 		SetStart(body.Start).
 		SetEnd(body.End).
-		SetNumber(body.Number).
+		SetNumberOfPeople(body.NumberOfPeople).
 		Save(c)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)

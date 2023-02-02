@@ -487,20 +487,20 @@ func (m *AvailableRoomMutation) ResetEdge(name string) error {
 // BookingMutation represents an operation that mutates the Booking nodes in the graph.
 type BookingMutation struct {
 	config
-	op             Op
-	typ            string
-	number         *int
-	addnumber      *int
-	start          *time.Time
-	end            *time.Time
-	clearedFields  map[string]struct{}
-	profile        *uuid.UUID
-	clearedprofile bool
-	room           *int
-	clearedroom    bool
-	done           bool
-	oldValue       func(context.Context) (*Booking, error)
-	predicates     []predicate.Booking
+	op                  Op
+	typ                 string
+	number_of_people    *int
+	addnumber_of_people *int
+	start               *time.Time
+	end                 *time.Time
+	clearedFields       map[string]struct{}
+	profile             *uuid.UUID
+	clearedprofile      bool
+	room                *int
+	clearedroom         bool
+	done                bool
+	oldValue            func(context.Context) (*Booking, error)
+	predicates          []predicate.Booking
 }
 
 var _ ent.Mutation = (*BookingMutation)(nil)
@@ -579,43 +579,43 @@ func (m *BookingMutation) ResetRoomID() {
 	m.room = nil
 }
 
-// SetNumber sets the "number" field.
-func (m *BookingMutation) SetNumber(i int) {
-	m.number = &i
-	m.addnumber = nil
+// SetNumberOfPeople sets the "number_of_people" field.
+func (m *BookingMutation) SetNumberOfPeople(i int) {
+	m.number_of_people = &i
+	m.addnumber_of_people = nil
 }
 
-// Number returns the value of the "number" field in the mutation.
-func (m *BookingMutation) Number() (r int, exists bool) {
-	v := m.number
+// NumberOfPeople returns the value of the "number_of_people" field in the mutation.
+func (m *BookingMutation) NumberOfPeople() (r int, exists bool) {
+	v := m.number_of_people
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// AddNumber adds i to the "number" field.
-func (m *BookingMutation) AddNumber(i int) {
-	if m.addnumber != nil {
-		*m.addnumber += i
+// AddNumberOfPeople adds i to the "number_of_people" field.
+func (m *BookingMutation) AddNumberOfPeople(i int) {
+	if m.addnumber_of_people != nil {
+		*m.addnumber_of_people += i
 	} else {
-		m.addnumber = &i
+		m.addnumber_of_people = &i
 	}
 }
 
-// AddedNumber returns the value that was added to the "number" field in this mutation.
-func (m *BookingMutation) AddedNumber() (r int, exists bool) {
-	v := m.addnumber
+// AddedNumberOfPeople returns the value that was added to the "number_of_people" field in this mutation.
+func (m *BookingMutation) AddedNumberOfPeople() (r int, exists bool) {
+	v := m.addnumber_of_people
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// ResetNumber resets all changes to the "number" field.
-func (m *BookingMutation) ResetNumber() {
-	m.number = nil
-	m.addnumber = nil
+// ResetNumberOfPeople resets all changes to the "number_of_people" field.
+func (m *BookingMutation) ResetNumberOfPeople() {
+	m.number_of_people = nil
+	m.addnumber_of_people = nil
 }
 
 // SetStart sets the "start" field.
@@ -749,8 +749,8 @@ func (m *BookingMutation) Fields() []string {
 	if m.room != nil {
 		fields = append(fields, booking.FieldRoomID)
 	}
-	if m.number != nil {
-		fields = append(fields, booking.FieldNumber)
+	if m.number_of_people != nil {
+		fields = append(fields, booking.FieldNumberOfPeople)
 	}
 	if m.start != nil {
 		fields = append(fields, booking.FieldStart)
@@ -770,8 +770,8 @@ func (m *BookingMutation) Field(name string) (ent.Value, bool) {
 		return m.ProfileID()
 	case booking.FieldRoomID:
 		return m.RoomID()
-	case booking.FieldNumber:
-		return m.Number()
+	case booking.FieldNumberOfPeople:
+		return m.NumberOfPeople()
 	case booking.FieldStart:
 		return m.Start()
 	case booking.FieldEnd:
@@ -806,12 +806,12 @@ func (m *BookingMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetRoomID(v)
 		return nil
-	case booking.FieldNumber:
+	case booking.FieldNumberOfPeople:
 		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetNumber(v)
+		m.SetNumberOfPeople(v)
 		return nil
 	case booking.FieldStart:
 		v, ok := value.(time.Time)
@@ -835,8 +835,8 @@ func (m *BookingMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *BookingMutation) AddedFields() []string {
 	var fields []string
-	if m.addnumber != nil {
-		fields = append(fields, booking.FieldNumber)
+	if m.addnumber_of_people != nil {
+		fields = append(fields, booking.FieldNumberOfPeople)
 	}
 	return fields
 }
@@ -846,8 +846,8 @@ func (m *BookingMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *BookingMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
-	case booking.FieldNumber:
-		return m.AddedNumber()
+	case booking.FieldNumberOfPeople:
+		return m.AddedNumberOfPeople()
 	}
 	return nil, false
 }
@@ -857,12 +857,12 @@ func (m *BookingMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *BookingMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case booking.FieldNumber:
+	case booking.FieldNumberOfPeople:
 		v, ok := value.(int)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.AddNumber(v)
+		m.AddNumberOfPeople(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Booking numeric field %s", name)
@@ -897,8 +897,8 @@ func (m *BookingMutation) ResetField(name string) error {
 	case booking.FieldRoomID:
 		m.ResetRoomID()
 		return nil
-	case booking.FieldNumber:
-		m.ResetNumber()
+	case booking.FieldNumberOfPeople:
+		m.ResetNumberOfPeople()
 		return nil
 	case booking.FieldStart:
 		m.ResetStart()
