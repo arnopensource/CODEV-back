@@ -35,9 +35,16 @@ type BookingBody struct {
 	End    time.Time `json:"end"`
 }
 
-type FriendRequestDecisionBody bool
+type FriendRequestDecisionBody struct {
+	ID       string `json:"id" binding:"required"`
+	Accepted bool   `json:"accepted" binding:"required"`
+}
 
 type UpdateUserBody struct {
 	Firstname string `json:"firstname"`
 	Lastname  string `json:"lastname"`
+}
+
+type FriendRequestBody struct {
+	ID string `json:"id" binding:"required"`
 }
