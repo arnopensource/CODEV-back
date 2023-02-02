@@ -21,8 +21,8 @@ func (Booking) Annotations() []schema.Annotation {
 func (Booking) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("profile_id", uuid.New()),
-		field.Int("room_id"),
-		field.Int("number"),
+		field.Int("room_id").StructTag(`json:"roomId"`),
+		field.Int("number_of_people").StructTag(`json:"numberOfPeople"`),
 		field.Time("start"),
 		field.Time("end"),
 	}

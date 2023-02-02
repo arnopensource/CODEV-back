@@ -31,10 +31,10 @@ type NFCModificationBody struct {
 }
 
 type BookingBody struct {
-	RoomID int       `json:"room_id"`
-	Number int       `json:"number"`
-	Start  time.Time `json:"start"`
-	End    time.Time `json:"end"`
+	RoomID         int       `json:"roomId"`
+	NumberOfPeople int       `json:"numberOfPeople"`
+	Start          time.Time `json:"start"`
+	End            time.Time `json:"end"`
 }
 
 type FriendRequestDecisionBody struct {

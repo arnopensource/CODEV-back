@@ -31,7 +31,7 @@ var (
 	}
 	// BookingsColumns holds the columns for the "bookings" table.
 	BookingsColumns = []*schema.Column{
-		{Name: "number", Type: field.TypeInt},
+		{Name: "number_of_people", Type: field.TypeInt},
 		{Name: "start", Type: field.TypeTime},
 		{Name: "end", Type: field.TypeTime},
 		{Name: "profile_id", Type: field.TypeUUID},

@@ -9,8 +9,8 @@ const (
 	FieldProfileID = "profile_id"
 	// FieldRoomID holds the string denoting the room_id field in the database.
 	FieldRoomID = "room_id"
-	// FieldNumber holds the string denoting the number field in the database.
-	FieldNumber = "number"
+	// FieldNumberOfPeople holds the string denoting the number_of_people field in the database.
+	FieldNumberOfPeople = "number_of_people"
 	// FieldStart holds the string denoting the start field in the database.
 	FieldStart = "start"
 	// FieldEnd holds the string denoting the end field in the database.
@@ -45,7 +45,7 @@ const (
 var Columns = []string{
 	FieldProfileID,
 	FieldRoomID,
-	FieldNumber,
+	FieldNumberOfPeople,
 	FieldStart,
 	FieldEnd,
 }
