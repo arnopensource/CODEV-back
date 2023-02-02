@@ -144,3 +144,59 @@ func QuitEvent(c *gin.Context) {
 		"message": "success",
 	})
 }
+
+func ShareAdminRights(c *gin.Context) {
+	user, err := checkToken(c)
+	if err != nil {
+		c.AbortWithError(http.StatusUnauthorized, err)
+		return
+	}
+
+	eventID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	var body Member
+	if err = c.ShouldBindJSON(&body); err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	isAdmin, err := checkAdminRights(user.ID, eventID, c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	if !isAdmin {
+		c.JSON(http.StatusUnauthorized, map[string]any{
+			"error": "you are not admin",
+		})
+		return
+	}
+
+	isAdmin, err = checkAdminRights(body.ProfileID, eventID, c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	if isAdmin {
+		c.JSON(http.StatusConflict, map[string]any{
+			"error": "this member is already admin",
+		})
+		return
+	}
+
+	client := ent.Get()
+
+	_, err = client.Member.Update().Where(member.ProfileID(body.ProfileID), member.EventID(eventID)).SetIsAdmin(true).Save(c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, map[string]any{
+		"message": "success",
+	})
+}

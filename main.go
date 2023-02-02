@@ -59,7 +59,7 @@ func main() {
 	r.DELETE("/events/:id/members", handlers.RemoveMember)
 	r.DELETE("/events/:id/me", handlers.QuitEvent)
 
-	r.PUT("/events/:id/admins", nil)
+	r.PUT("/events/:id/admins", handlers.ShareAdminRights)
 
 	if err := r.Run(); err != nil {
 		log.Fatal(err)
