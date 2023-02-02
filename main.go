@@ -44,6 +44,11 @@ func main() {
 	r.GET("/friends/requests", handlers.GetFriendRequests)
 	r.GET("/friends/requests/sent", handlers.GetSentFriendRequests)
 
+	r.POST("/events", handlers.CreateEvent)
+	r.GET("/events", nil)
+	r.PUT("/events/:id", nil)
+	r.DELETE("/events/:id", nil)
+
 	if err := r.Run(); err != nil {
 		log.Fatal(err)
 	}
