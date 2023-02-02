@@ -224,3 +224,48 @@ func checkAdminRights(userId uuid.UUID, eventId int, ctx context.Context) (bool,
 
 	return userMembership.IsAdmin, nil
 }
+
+func CancelEvent(c *gin.Context) {
+	user, err := checkToken(c)
+	if err != nil {
+		c.AbortWithError(http.StatusUnauthorized, err)
+		return
+	}
+
+	eventID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	client := ent.Get()
+
+	isAdmin, err := checkAdminRights(user.ID, eventID, c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	if !isAdmin {
+		c.JSON(http.StatusUnauthorized, map[string]any{
+			"error": "you are not admin",
+		})
+		return
+	}
+
+	_, err = client.Member.Delete().Where(member.EventID(eventID)).Exec(c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	_, err = client.Event.Delete().Where(event.ID(eventID)).Exec(c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, map[string]any{
+		"message": "Event deleted",
+	})
+}

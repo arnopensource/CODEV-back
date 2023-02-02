@@ -47,7 +47,7 @@ func main() {
 	r.POST("/events", handlers.CreateEvent)
 	r.GET("/events", handlers.GetMyEvents)
 	r.PUT("/events/:id", handlers.ModifyEvent)
-	r.DELETE("/events/:id", nil)
+	r.DELETE("/events/:id", handlers.CancelEvent)
 
 	if err := r.Run(); err != nil {
 		log.Fatal(err)
