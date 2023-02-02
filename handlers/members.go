@@ -100,3 +100,47 @@ func RemoveMember(c *gin.Context) {
 		"message": "success",
 	})
 }
+
+func QuitEvent(c *gin.Context) {
+	user, err := checkToken(c)
+	if err != nil {
+		c.AbortWithError(http.StatusUnauthorized, err)
+		return
+	}
+
+	eventID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	client := ent.Get()
+
+	isAdmin, err := checkAdminRights(user.ID, eventID, c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	if isAdmin {
+		adminNumber, err := client.Member.Query().Where(member.And(member.EventID(eventID), member.IsAdmin(true))).Count(c)
+		if err != nil {
+			return
+		}
+		if adminNumber == 1 {
+			c.JSON(http.StatusUnauthorized, map[string]any{
+				"error": "you are the last admin",
+			})
+			return
+		}
+	}
+
+	_, err = client.Member.Delete().Where(member.ProfileID(user.ID), member.EventID(eventID)).Exec(c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, map[string]any{
+		"message": "success",
+	})
+}
