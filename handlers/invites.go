@@ -33,6 +33,10 @@ func SendInvite(c *gin.Context) {
 	}
 
 	isAdmin, err := checkAdminRights(user.ID, body.EventID, c)
+	if _, ok := err.(*_ent.NotFoundError); ok {
+		c.AbortWithError(http.StatusNotFound, err)
+		return
+	}
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -196,6 +200,10 @@ func CancelInvite(c *gin.Context) {
 	}
 
 	isAdmin, err := checkAdminRights(user.ID, body.EventID, c)
+	if _, ok := err.(*_ent.NotFoundError); ok {
+		c.AbortWithError(http.StatusNotFound, err)
+		return
+	}
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -246,6 +254,10 @@ func GetInvitesOfEvent(c *gin.Context) {
 	}
 
 	isAdmin, err := checkAdminRights(user.ID, eventID, c)
+	if _, ok := err.(*_ent.NotFoundError); ok {
+		c.AbortWithError(http.StatusNotFound, err)
+		return
+	}
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return

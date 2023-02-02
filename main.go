@@ -55,6 +55,12 @@ func main() {
 	r.DELETE("/events/invites", handlers.CancelInvite)
 	r.GET("/events/:id/invites", handlers.GetInvitesOfEvent)
 
+	r.GET("/events/:id/members", handlers.GetEventMembers)
+	r.DELETE("/events/:id/members", handlers.RemoveMember)
+	r.DELETE("/events/:id/me", handlers.QuitEvent)
+
+	r.PUT("/events/:id/admins", handlers.ShareAdminRights)
+
 	if err := r.Run(); err != nil {
 		log.Fatal(err)
 	}

@@ -2,12 +2,11 @@ package handlers
 
 import (
 	"context"
-	_ent "github.com/abc3354/CODEV-back/ent"
-	"github.com/google/uuid"
 	"net/http"
 	"strconv"
 	"time"
 
+	_ent "github.com/abc3354/CODEV-back/ent"
 	"github.com/abc3354/CODEV-back/ent/availableroom"
 	"github.com/abc3354/CODEV-back/ent/event"
 	"github.com/abc3354/CODEV-back/ent/member"
@@ -16,6 +15,7 @@ import (
 	"github.com/abc3354/CODEV-back/services/ent"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type CreateEventRequest struct {
@@ -176,11 +176,14 @@ func ModifyEvent(c *gin.Context) {
 	client := ent.Get()
 
 	isAdmin, err := checkAdminRights(user.ID, eventID, c)
+	if _, ok := err.(*_ent.NotFoundError); ok {
+		c.AbortWithError(http.StatusNotFound, err)
+		return
+	}
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-
 	if !isAdmin {
 		c.JSON(http.StatusUnauthorized, map[string]any{
 			"error": "you are not admin",
@@ -257,11 +260,14 @@ func CancelEvent(c *gin.Context) {
 	client := ent.Get()
 
 	isAdmin, err := checkAdminRights(user.ID, eventID, c)
+	if _, ok := err.(*_ent.NotFoundError); ok {
+		c.AbortWithError(http.StatusNotFound, err)
+		return
+	}
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-
 	if !isAdmin {
 		c.JSON(http.StatusUnauthorized, map[string]any{
 			"error": "you are not admin",
