@@ -2,13 +2,16 @@ package handlers
 
 import (
 	"context"
+	"net/http"
+	"strconv"
+
 	_ent "github.com/abc3354/CODEV-back/ent"
 	"github.com/abc3354/CODEV-back/ent/eventinvite"
 	"github.com/abc3354/CODEV-back/ent/member"
 	"github.com/abc3354/CODEV-back/services/ent"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"net/http"
 )
 
 type SendInviteRequest struct {
@@ -118,4 +121,58 @@ func GetMyInvites(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, invites)
+}
+
+type InviteDecisionRequest struct {
+	Accept *bool `json:"accept" binding:"required"`
+}
+
+func InviteDecision(c *gin.Context) {
+	user, err := checkToken(c)
+	if err != nil {
+		c.AbortWithError(http.StatusUnauthorized, err)
+		return
+	}
+
+	eventID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	var body InviteDecisionRequest
+	if err = c.ShouldBindJSON(&body); err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	client := ent.Get()
+
+	exists, err := checkInvite(eventID, user.ID, c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	if !exists {
+		c.AbortWithError(http.StatusNotFound, err)
+		return
+	}
+
+	_, err = client.EventInvite.Delete().Where(eventinvite.EventID(eventID), eventinvite.ProfileID(user.ID)).Exec(c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	if *body.Accept {
+		_, err = client.Member.Create().SetEventID(eventID).SetProfileID(user.ID).Save(c)
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, map[string]any{
+		"message": "success",
+	})
 }
