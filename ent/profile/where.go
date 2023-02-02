@@ -418,6 +418,33 @@ func HasBookingsWith(preds ...predicate.Room) predicate.Profile {
 	})
 }
 
+// HasEvents applies the HasEdge predicate on the "events" edge.
+func HasEvents() predicate.Profile {
+	return predicate.Profile(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, EventsTable, EventsPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasEventsWith applies the HasEdge predicate on the "events" edge with a given conditions (other predicates).
+func HasEventsWith(preds ...predicate.Event) predicate.Profile {
+	return predicate.Profile(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(EventsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, EventsTable, EventsPrimaryKey...),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasFriendsData applies the HasEdge predicate on the "friends_data" edge.
 func HasFriendsData() predicate.Profile {
 	return predicate.Profile(func(s *sql.Selector) {
@@ -463,6 +490,33 @@ func HasBookingsDataWith(preds ...predicate.Booking) predicate.Profile {
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(BookingsDataInverseTable, BookingsDataColumn),
 			sqlgraph.Edge(sqlgraph.O2M, true, BookingsDataTable, BookingsDataColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasEventsData applies the HasEdge predicate on the "events_data" edge.
+func HasEventsData() predicate.Profile {
+	return predicate.Profile(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, EventsDataTable, EventsDataColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasEventsDataWith applies the HasEdge predicate on the "events_data" edge with a given conditions (other predicates).
+func HasEventsDataWith(preds ...predicate.Member) predicate.Profile {
+	return predicate.Profile(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(EventsDataInverseTable, EventsDataColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, EventsDataTable, EventsDataColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

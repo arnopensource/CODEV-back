@@ -12,8 +12,14 @@ type AvailableRoom func(*sql.Selector)
 // Booking is the predicate function for booking builders.
 type Booking func(*sql.Selector)
 
+// Event is the predicate function for event builders.
+type Event func(*sql.Selector)
+
 // Friend is the predicate function for friend builders.
 type Friend func(*sql.Selector)
+
+// Member is the predicate function for member builders.
+type Member func(*sql.Selector)
 
 // Profile is the predicate function for profile builders.
 type Profile func(*sql.Selector)

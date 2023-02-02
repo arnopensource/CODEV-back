@@ -34,11 +34,13 @@ type RoomEdges struct {
 	Bookings []*Profile `json:"bookings,omitempty"`
 	// Availability holds the value of the availability edge.
 	Availability []*AvailableRoom `json:"availability,omitempty"`
+	// Events holds the value of the events edge.
+	Events []*Event `json:"events,omitempty"`
 	// BookingsData holds the value of the bookings_data edge.
 	BookingsData []*Booking `json:"bookings_data,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // BookingsOrErr returns the Bookings value or an error if the edge
@@ -59,10 +61,19 @@ func (e RoomEdges) AvailabilityOrErr() ([]*AvailableRoom, error) {
 	return nil, &NotLoadedError{edge: "availability"}
 }
 
+// EventsOrErr returns the Events value or an error if the edge
+// was not loaded in eager-loading.
+func (e RoomEdges) EventsOrErr() ([]*Event, error) {
+	if e.loadedTypes[2] {
+		return e.Events, nil
+	}
+	return nil, &NotLoadedError{edge: "events"}
+}
+
 // BookingsDataOrErr returns the BookingsData value or an error if the edge
 // was not loaded in eager-loading.
 func (e RoomEdges) BookingsDataOrErr() ([]*Booking, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.BookingsData, nil
 	}
 	return nil, &NotLoadedError{edge: "bookings_data"}
@@ -135,6 +146,11 @@ func (r *Room) QueryBookings() *ProfileQuery {
 // QueryAvailability queries the "availability" edge of the Room entity.
 func (r *Room) QueryAvailability() *AvailableRoomQuery {
 	return (&RoomClient{config: r.config}).QueryAvailability(r)
+}
+
+// QueryEvents queries the "events" edge of the Room entity.
+func (r *Room) QueryEvents() *EventQuery {
+	return (&RoomClient{config: r.config}).QueryEvents(r)
 }
 
 // QueryBookingsData queries the "bookings_data" edge of the Room entity.

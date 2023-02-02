@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/abc3354/CODEV-back/ent/availableroom"
+	"github.com/abc3354/CODEV-back/ent/event"
 	"github.com/abc3354/CODEV-back/ent/profile"
 	"github.com/abc3354/CODEV-back/ent/room"
 	"github.com/google/uuid"
@@ -74,6 +75,21 @@ func (rc *RoomCreate) AddAvailability(a ...*AvailableRoom) *RoomCreate {
 		ids[i] = a[i].ID
 	}
 	return rc.AddAvailabilityIDs(ids...)
+}
+
+// AddEventIDs adds the "events" edge to the Event entity by IDs.
+func (rc *RoomCreate) AddEventIDs(ids ...int) *RoomCreate {
+	rc.mutation.AddEventIDs(ids...)
+	return rc
+}
+
+// AddEvents adds the "events" edges to the Event entity.
+func (rc *RoomCreate) AddEvents(e ...*Event) *RoomCreate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return rc.AddEventIDs(ids...)
 }
 
 // Mutation returns the RoomMutation object of the builder.
@@ -200,6 +216,25 @@ func (rc *RoomCreate) createSpec() (*Room, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: availableroom.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := rc.mutation.EventsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   room.EventsTable,
+			Columns: []string{room.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: event.FieldID,
 				},
 			},
 		}

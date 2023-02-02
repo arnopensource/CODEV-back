@@ -29,14 +29,18 @@ type (
 	hooks struct {
 		AvailableRoom []ent.Hook
 		Booking       []ent.Hook
+		Event         []ent.Hook
 		Friend        []ent.Hook
+		Member        []ent.Hook
 		Profile       []ent.Hook
 		Room          []ent.Hook
 	}
 	inters struct {
 		AvailableRoom []ent.Interceptor
 		Booking       []ent.Interceptor
+		Event         []ent.Interceptor
 		Friend        []ent.Interceptor
+		Member        []ent.Interceptor
 		Profile       []ent.Interceptor
 		Room          []ent.Interceptor
 	}

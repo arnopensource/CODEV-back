@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/abc3354/CODEV-back/ent/event"
 	"github.com/abc3354/CODEV-back/ent/predicate"
 	"github.com/abc3354/CODEV-back/ent/profile"
 	"github.com/abc3354/CODEV-back/ent/room"
@@ -119,6 +120,21 @@ func (pu *ProfileUpdate) AddBookings(r ...*Room) *ProfileUpdate {
 	return pu.AddBookingIDs(ids...)
 }
 
+// AddEventIDs adds the "events" edge to the Event entity by IDs.
+func (pu *ProfileUpdate) AddEventIDs(ids ...int) *ProfileUpdate {
+	pu.mutation.AddEventIDs(ids...)
+	return pu
+}
+
+// AddEvents adds the "events" edges to the Event entity.
+func (pu *ProfileUpdate) AddEvents(e ...*Event) *ProfileUpdate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return pu.AddEventIDs(ids...)
+}
+
 // Mutation returns the ProfileMutation object of the builder.
 func (pu *ProfileUpdate) Mutation() *ProfileMutation {
 	return pu.mutation
@@ -164,6 +180,27 @@ func (pu *ProfileUpdate) RemoveBookings(r ...*Room) *ProfileUpdate {
 		ids[i] = r[i].ID
 	}
 	return pu.RemoveBookingIDs(ids...)
+}
+
+// ClearEvents clears all "events" edges to the Event entity.
+func (pu *ProfileUpdate) ClearEvents() *ProfileUpdate {
+	pu.mutation.ClearEvents()
+	return pu
+}
+
+// RemoveEventIDs removes the "events" edge to Event entities by IDs.
+func (pu *ProfileUpdate) RemoveEventIDs(ids ...int) *ProfileUpdate {
+	pu.mutation.RemoveEventIDs(ids...)
+	return pu
+}
+
+// RemoveEvents removes "events" edges to Event entities.
+func (pu *ProfileUpdate) RemoveEvents(e ...*Event) *ProfileUpdate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return pu.RemoveEventIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -337,6 +374,72 @@ func (pu *ProfileUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if pu.mutation.EventsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   profile.EventsTable,
+			Columns: profile.EventsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: event.FieldID,
+				},
+			},
+		}
+		createE := &MemberCreate{config: pu.config, mutation: newMemberMutation(pu.config, OpCreate)}
+		createE.defaults()
+		_, specE := createE.createSpec()
+		edge.Target.Fields = specE.Fields
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.RemovedEventsIDs(); len(nodes) > 0 && !pu.mutation.EventsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   profile.EventsTable,
+			Columns: profile.EventsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: event.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		createE := &MemberCreate{config: pu.config, mutation: newMemberMutation(pu.config, OpCreate)}
+		createE.defaults()
+		_, specE := createE.createSpec()
+		edge.Target.Fields = specE.Fields
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.EventsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   profile.EventsTable,
+			Columns: profile.EventsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: event.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		createE := &MemberCreate{config: pu.config, mutation: newMemberMutation(pu.config, OpCreate)}
+		createE.defaults()
+		_, specE := createE.createSpec()
+		edge.Target.Fields = specE.Fields
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, pu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{profile.Label}
@@ -447,6 +550,21 @@ func (puo *ProfileUpdateOne) AddBookings(r ...*Room) *ProfileUpdateOne {
 	return puo.AddBookingIDs(ids...)
 }
 
+// AddEventIDs adds the "events" edge to the Event entity by IDs.
+func (puo *ProfileUpdateOne) AddEventIDs(ids ...int) *ProfileUpdateOne {
+	puo.mutation.AddEventIDs(ids...)
+	return puo
+}
+
+// AddEvents adds the "events" edges to the Event entity.
+func (puo *ProfileUpdateOne) AddEvents(e ...*Event) *ProfileUpdateOne {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return puo.AddEventIDs(ids...)
+}
+
 // Mutation returns the ProfileMutation object of the builder.
 func (puo *ProfileUpdateOne) Mutation() *ProfileMutation {
 	return puo.mutation
@@ -492,6 +610,27 @@ func (puo *ProfileUpdateOne) RemoveBookings(r ...*Room) *ProfileUpdateOne {
 		ids[i] = r[i].ID
 	}
 	return puo.RemoveBookingIDs(ids...)
+}
+
+// ClearEvents clears all "events" edges to the Event entity.
+func (puo *ProfileUpdateOne) ClearEvents() *ProfileUpdateOne {
+	puo.mutation.ClearEvents()
+	return puo
+}
+
+// RemoveEventIDs removes the "events" edge to Event entities by IDs.
+func (puo *ProfileUpdateOne) RemoveEventIDs(ids ...int) *ProfileUpdateOne {
+	puo.mutation.RemoveEventIDs(ids...)
+	return puo
+}
+
+// RemoveEvents removes "events" edges to Event entities.
+func (puo *ProfileUpdateOne) RemoveEvents(e ...*Event) *ProfileUpdateOne {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return puo.RemoveEventIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -687,6 +826,72 @@ func (puo *ProfileUpdateOne) sqlSave(ctx context.Context) (_node *Profile, err e
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if puo.mutation.EventsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   profile.EventsTable,
+			Columns: profile.EventsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: event.FieldID,
+				},
+			},
+		}
+		createE := &MemberCreate{config: puo.config, mutation: newMemberMutation(puo.config, OpCreate)}
+		createE.defaults()
+		_, specE := createE.createSpec()
+		edge.Target.Fields = specE.Fields
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.RemovedEventsIDs(); len(nodes) > 0 && !puo.mutation.EventsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   profile.EventsTable,
+			Columns: profile.EventsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: event.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		createE := &MemberCreate{config: puo.config, mutation: newMemberMutation(puo.config, OpCreate)}
+		createE.defaults()
+		_, specE := createE.createSpec()
+		edge.Target.Fields = specE.Fields
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.EventsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   profile.EventsTable,
+			Columns: profile.EventsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: event.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		createE := &MemberCreate{config: puo.config, mutation: newMemberMutation(puo.config, OpCreate)}
+		createE.defaults()
+		_, specE := createE.createSpec()
+		edge.Target.Fields = specE.Fields
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Profile{config: puo.config}

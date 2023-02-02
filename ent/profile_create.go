@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/abc3354/CODEV-back/ent/event"
 	"github.com/abc3354/CODEV-back/ent/profile"
 	"github.com/abc3354/CODEV-back/ent/room"
 	"github.com/google/uuid"
@@ -103,6 +104,21 @@ func (pc *ProfileCreate) AddBookings(r ...*Room) *ProfileCreate {
 		ids[i] = r[i].ID
 	}
 	return pc.AddBookingIDs(ids...)
+}
+
+// AddEventIDs adds the "events" edge to the Event entity by IDs.
+func (pc *ProfileCreate) AddEventIDs(ids ...int) *ProfileCreate {
+	pc.mutation.AddEventIDs(ids...)
+	return pc
+}
+
+// AddEvents adds the "events" edges to the Event entity.
+func (pc *ProfileCreate) AddEvents(e ...*Event) *ProfileCreate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return pc.AddEventIDs(ids...)
 }
 
 // Mutation returns the ProfileMutation object of the builder.
@@ -235,6 +251,29 @@ func (pc *ProfileCreate) createSpec() (*Profile, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := pc.mutation.EventsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   profile.EventsTable,
+			Columns: profile.EventsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: event.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		createE := &MemberCreate{config: pc.config, mutation: newMemberMutation(pc.config, OpCreate)}
+		createE.defaults()
+		_, specE := createE.createSpec()
+		edge.Target.Fields = specE.Fields
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

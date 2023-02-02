@@ -13,7 +13,9 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/abc3354/CODEV-back/ent/availableroom"
 	"github.com/abc3354/CODEV-back/ent/booking"
+	"github.com/abc3354/CODEV-back/ent/event"
 	"github.com/abc3354/CODEV-back/ent/friend"
+	"github.com/abc3354/CODEV-back/ent/member"
 	"github.com/abc3354/CODEV-back/ent/profile"
 	"github.com/abc3354/CODEV-back/ent/room"
 )
@@ -44,7 +46,9 @@ func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
 		availableroom.Table: availableroom.ValidColumn,
 		booking.Table:       booking.ValidColumn,
+		event.Table:         event.ValidColumn,
 		friend.Table:        friend.ValidColumn,
+		member.Table:        member.ValidColumn,
 		profile.Table:       profile.ValidColumn,
 		room.Table:          room.ValidColumn,
 	}

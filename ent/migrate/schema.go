@@ -57,6 +57,29 @@ var (
 			},
 		},
 	}
+	// EventsColumns holds the columns for the "events" table.
+	EventsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "name", Type: field.TypeString},
+		{Name: "activity", Type: field.TypeString},
+		{Name: "start", Type: field.TypeTime},
+		{Name: "end", Type: field.TypeTime},
+		{Name: "room_events", Type: field.TypeInt},
+	}
+	// EventsTable holds the schema information for the "events" table.
+	EventsTable = &schema.Table{
+		Name:       "events",
+		Columns:    EventsColumns,
+		PrimaryKey: []*schema.Column{EventsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "events_rooms_events",
+				Columns:    []*schema.Column{EventsColumns[5]},
+				RefColumns: []*schema.Column{RoomsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// FriendsColumns holds the columns for the "friends" table.
 	FriendsColumns = []*schema.Column{
 		{Name: "since", Type: field.TypeTime},
@@ -80,6 +103,32 @@ var (
 				Symbol:     "friends_profiles_friend",
 				Columns:    []*schema.Column{FriendsColumns[3]},
 				RefColumns: []*schema.Column{ProfilesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// MembersColumns holds the columns for the "members" table.
+	MembersColumns = []*schema.Column{
+		{Name: "is_admin", Type: field.TypeBool, Default: false},
+		{Name: "profile_id", Type: field.TypeUUID},
+		{Name: "event_id", Type: field.TypeInt},
+	}
+	// MembersTable holds the schema information for the "members" table.
+	MembersTable = &schema.Table{
+		Name:       "members",
+		Columns:    MembersColumns,
+		PrimaryKey: []*schema.Column{MembersColumns[2], MembersColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "members_profiles_profile",
+				Columns:    []*schema.Column{MembersColumns[1]},
+				RefColumns: []*schema.Column{ProfilesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "members_events_event",
+				Columns:    []*schema.Column{MembersColumns[2]},
+				RefColumns: []*schema.Column{EventsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 		},
@@ -116,7 +165,9 @@ var (
 	Tables = []*schema.Table{
 		AvailableRoomsTable,
 		BookingsTable,
+		EventsTable,
 		FriendsTable,
+		MembersTable,
 		ProfilesTable,
 		RoomsTable,
 	}
@@ -126,6 +177,9 @@ func init() {
 	AvailableRoomsTable.ForeignKeys[0].RefTable = RoomsTable
 	BookingsTable.ForeignKeys[0].RefTable = ProfilesTable
 	BookingsTable.ForeignKeys[1].RefTable = RoomsTable
+	EventsTable.ForeignKeys[0].RefTable = RoomsTable
 	FriendsTable.ForeignKeys[0].RefTable = ProfilesTable
 	FriendsTable.ForeignKeys[1].RefTable = ProfilesTable
+	MembersTable.ForeignKeys[0].RefTable = ProfilesTable
+	MembersTable.ForeignKeys[1].RefTable = EventsTable
 }

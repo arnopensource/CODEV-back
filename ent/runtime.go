@@ -2,8 +2,19 @@
 
 package ent
 
+import (
+	"github.com/abc3354/CODEV-back/ent/member"
+	"github.com/abc3354/CODEV-back/ent/schema"
+)
+
 // The init function reads all schema descriptors with runtime code
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	memberFields := schema.Member{}.Fields()
+	_ = memberFields
+	// memberDescIsAdmin is the schema descriptor for is_admin field.
+	memberDescIsAdmin := memberFields[2].Descriptor()
+	// member.DefaultIsAdmin holds the default value on creation for the is_admin field.
+	member.DefaultIsAdmin = memberDescIsAdmin.Default.(bool)
 }
