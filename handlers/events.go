@@ -90,3 +90,27 @@ func CreateEvent(c *gin.Context) {
 
 	c.JSON(http.StatusOK, event)
 }
+
+func GetMyEvents(c *gin.Context) {
+	user, err := checkToken(c)
+	if err != nil {
+		c.AbortWithError(http.StatusUnauthorized, err)
+		return
+	}
+
+	client := ent.Get()
+
+	userProfile, err := client.Profile.Query().Where(profile.ID(user.ID)).Only(c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	events, err := userProfile.QueryEvents().All(c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, events)
+}

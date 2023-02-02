@@ -45,7 +45,7 @@ func main() {
 	r.GET("/friends/requests/sent", handlers.GetSentFriendRequests)
 
 	r.POST("/events", handlers.CreateEvent)
-	r.GET("/events", nil)
+	r.GET("/events", handlers.GetMyEvents)
 	r.PUT("/events/:id", nil)
 	r.DELETE("/events/:id", nil)
 
