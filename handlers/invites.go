@@ -176,3 +176,58 @@ func InviteDecision(c *gin.Context) {
 		"message": "success",
 	})
 }
+
+type CancelInviteRequest struct {
+	EventID   int       `json:"eventId" binding:"required"`
+	ProfileID uuid.UUID `json:"profileId" binding:"required"`
+}
+
+func CancelInvite(c *gin.Context) {
+	user, err := checkToken(c)
+	if err != nil {
+		c.AbortWithError(http.StatusUnauthorized, err)
+		return
+	}
+
+	var body CancelInviteRequest
+	if err = c.ShouldBindJSON(&body); err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	isAdmin, err := checkAdminRights(user.ID, body.EventID, c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	if !isAdmin {
+		c.JSON(http.StatusUnauthorized, map[string]any{
+			"error": "you are not admin",
+		})
+		return
+	}
+
+	exists, err := checkInvite(body.EventID, body.ProfileID, c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+	if !exists {
+		c.JSON(http.StatusConflict, map[string]any{
+			"error": "invite does not exist",
+		})
+		return
+	}
+
+	client := ent.Get()
+
+	_, err = client.EventInvite.Delete().Where(eventinvite.EventID(body.EventID), eventinvite.ProfileID(body.ProfileID)).Exec(c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, map[string]any{
+		"message": "success",
+	})
+}
