@@ -2,35 +2,32 @@ package handlers
 
 import (
 	"net/http"
-	"strconv"
-	"time"
 
 	"github.com/abc3354/CODEV-back/ent/availableroom"
 	"github.com/abc3354/CODEV-back/ent/booking"
 	"github.com/abc3354/CODEV-back/ent/room"
 	"github.com/abc3354/CODEV-back/services/ent"
-	"github.com/gin-gonic/gin/binding"
 
-	"github.com/abc3354/CODEV-back/services/ade"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 )
 
-func GetEmptyRooms(c *gin.Context) {
-	at := time.Now()
-
-	atStr := c.Query("time")
-	if atStr != "" {
-		atInt, err := strconv.Atoi(atStr)
-		if err != nil {
-			c.AbortWithError(http.StatusBadRequest, err)
-			return
-		}
-		at = time.Unix(int64(atInt), 0)
-	}
-
-	result := ade.GetEmptyRooms(at)
-	c.JSON(http.StatusOK, result)
-}
+//func GetEmptyRooms(c *gin.Context) {
+//	at := time.Now()
+//
+//	atStr := c.Query("time")
+//	if atStr != "" {
+//		atInt, err := strconv.Atoi(atStr)
+//		if err != nil {
+//			c.AbortWithError(http.StatusBadRequest, err)
+//			return
+//		}
+//		at = time.Unix(int64(atInt), 0)
+//	}
+//
+//	result := ade.GetEmptyRooms(at)
+//	c.JSON(http.StatusOK, result)
+//}
 
 func CreateBooking(c *gin.Context) {
 	//auth

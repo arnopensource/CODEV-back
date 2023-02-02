@@ -4,7 +4,6 @@ import (
 	"log"
 
 	"github.com/abc3354/CODEV-back/handlers"
-	"github.com/abc3354/CODEV-back/services/ade"
 	"github.com/abc3354/CODEV-back/services/database"
 	"github.com/abc3354/CODEV-back/services/ent"
 
@@ -15,7 +14,6 @@ import (
 func main() {
 	defer database.Close()
 	defer ent.Close()
-	ade.Update()
 
 	r := gin.Default()
 
@@ -34,7 +32,7 @@ func main() {
 	r.GET("/users/me", handlers.GetMyUser)
 	r.PUT("/users", handlers.UpdateUser)
 
-	r.GET("/rooms/empty", handlers.GetEmptyRooms)
+	//r.GET("/rooms/empty", handlers.GetEmptyRooms)
 
 	r.POST("/bookings", handlers.CreateBooking)
 	r.GET("/bookings", handlers.GetUserBookings)
