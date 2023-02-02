@@ -3,8 +3,6 @@ package handlers
 import (
 	"net/http"
 
-	_ent "github.com/abc3354/CODEV-back/ent"
-
 	"github.com/abc3354/CODEV-back/ent/profile"
 	"github.com/abc3354/CODEV-back/services/ent"
 
@@ -29,7 +27,7 @@ func GetUsers(c *gin.Context) {
 			profile.FirstnameContainsFold(filterName),
 			profile.LastnameContainsFold(filterName),
 		)).
-		Select(profile.FieldID, profile.FieldFirstname, profile.FieldLastname).
+		Select(profile.FieldID, profile.FieldFirstname, profile.FieldLastname, profile.FieldEmail).
 		All(c)
 
 	if err != nil {
@@ -38,11 +36,9 @@ func GetUsers(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, profiles)
-
 }
 
 func GetUserById(c *gin.Context) {
-
 	_, err := checkToken(c)
 	if err != nil {
 		c.AbortWithError(http.StatusUnauthorized, err)
@@ -59,7 +55,7 @@ func GetUserById(c *gin.Context) {
 	userProfile, err := client.Profile.
 		Query().
 		Where(profile.ID(userID)).
-		Select(profile.FieldID, profile.FieldFirstname, profile.FieldLastname).
+		Select(profile.FieldID, profile.FieldFirstname, profile.FieldLastname, profile.FieldEmail).
 		Only(c)
 
 	if err != nil {
@@ -68,7 +64,6 @@ func GetUserById(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, userProfile)
-
 }
 
 func GetMyUser(c *gin.Context) {
@@ -82,7 +77,7 @@ func GetMyUser(c *gin.Context) {
 	userProfile, err := client.Profile.
 		Query().
 		Where(profile.ID(user.ID)).
-		Select(profile.FieldID, profile.FieldFirstname, profile.FieldLastname).
+		Select(profile.FieldID, profile.FieldFirstname, profile.FieldLastname, profile.FieldEmail).
 		Only(c)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
@@ -99,13 +94,7 @@ func GetMyUser(c *gin.Context) {
 		userProfile.Edges.Friends = append(userProfile.Edges.Friends, friends...)
 	}
 
-	c.JSON(http.StatusOK, struct {
-		*_ent.Profile
-		Email string `json:"email"`
-	}{
-		Profile: userProfile,
-		Email:   user.Email,
-	})
+	c.JSON(http.StatusOK, userProfile)
 }
 
 func UpdateUser(c *gin.Context) {

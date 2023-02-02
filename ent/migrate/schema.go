@@ -90,6 +90,7 @@ var (
 		{Name: "firstname", Type: field.TypeString, Nullable: true},
 		{Name: "lastname", Type: field.TypeString, Nullable: true},
 		{Name: "phone", Type: field.TypeString, Nullable: true},
+		{Name: "email", Type: field.TypeString},
 	}
 	// ProfilesTable holds the schema information for the "profiles" table.
 	ProfilesTable = &schema.Table{

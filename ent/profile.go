@@ -22,9 +22,11 @@ type Profile struct {
 	Lastname string `json:"lastname,omitempty"`
 	// Phone holds the value of the "phone" field.
 	Phone string `json:"phone,omitempty"`
+	// Email holds the value of the "email" field.
+	Email string `json:"email,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ProfileQuery when eager-loading is set.
-	Edges ProfileEdges `json:"edges"`
+	Edges ProfileEdges `json:"-"`
 }
 
 // ProfileEdges holds the relations/edges for other nodes in the graph.
@@ -83,7 +85,7 @@ func (*Profile) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case profile.FieldFirstname, profile.FieldLastname, profile.FieldPhone:
+		case profile.FieldFirstname, profile.FieldLastname, profile.FieldPhone, profile.FieldEmail:
 			values[i] = new(sql.NullString)
 		case profile.FieldID:
 			values[i] = new(uuid.UUID)
@@ -125,6 +127,12 @@ func (pr *Profile) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field phone", values[i])
 			} else if value.Valid {
 				pr.Phone = value.String
+			}
+		case profile.FieldEmail:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field email", values[i])
+			} else if value.Valid {
+				pr.Email = value.String
 			}
 		}
 	}
@@ -182,6 +190,9 @@ func (pr *Profile) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("phone=")
 	builder.WriteString(pr.Phone)
+	builder.WriteString(", ")
+	builder.WriteString("email=")
+	builder.WriteString(pr.Email)
 	builder.WriteByte(')')
 	return builder.String()
 }

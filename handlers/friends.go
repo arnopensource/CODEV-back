@@ -88,7 +88,6 @@ func GetFriends(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, profiles)
-
 }
 
 func FriendRequestDecision(c *gin.Context) {

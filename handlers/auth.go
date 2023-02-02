@@ -30,7 +30,7 @@ func Login(c *gin.Context) {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	if err = createProfile(c, resp.User.ID); err != nil {
+	if err = createProfile(c, resp.User.ID, resp.User.Email, "", ""); err != nil {
 		return
 	}
 	c.JSON(http.StatusOK, resp.AccessToken)
@@ -59,7 +59,7 @@ func Signup(c *gin.Context) {
 		})
 		return
 	}
-	if err = createProfile(c, resp.User.ID); err != nil {
+	if err = createProfile(c, resp.User.ID, resp.User.Email, body.Firstname, body.Lastname); err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
@@ -75,7 +75,8 @@ func NFCLogin(c *gin.Context) {
 		return
 	}
 	var userID uuid.UUID
-	err := database.Get().QueryRowContext(context.Background(), "SELECT id FROM auth.users WHERE raw_user_meta_data->>'nfc' = $1", body.NFC).Scan(&userID)
+	var userEmail string
+	err := database.Get().QueryRowContext(context.Background(), "SELECT id, email FROM auth.users WHERE raw_user_meta_data->>'nfc' = $1", body.NFC).Scan(&userID, &userEmail)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -88,7 +89,7 @@ func NFCLogin(c *gin.Context) {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	if err = createProfile(c, userID); err != nil {
+	if err = createProfile(c, userID, userEmail, "", ""); err != nil {
 		return
 	}
 	c.JSON(http.StatusOK, token)
@@ -145,15 +146,15 @@ func checkToken(c *gin.Context) (*types.User, error) {
 	return &user.User, nil
 }
 
-func createProfile(c *gin.Context, id uuid.UUID) error {
+func createProfile(c *gin.Context, userID uuid.UUID, email string, firstname string, lastname string) error {
 	client := ent.Get()
-	hasProfile, err := client.Profile.Query().Where(profile.ID(id)).Count(c)
+	hasProfile, err := client.Profile.Query().Where(profile.ID(userID)).Count(c)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return err
 	}
 	if hasProfile == 0 {
-		_, err = client.Profile.Create().SetID(id).Save(c)
+		_, err = client.Profile.Create().SetID(userID).SetEmail(email).SetFirstname(firstname).SetLastname(lastname).Save(c)
 		if err != nil {
 			c.AbortWithError(http.StatusInternalServerError, err)
 			return err

@@ -1458,6 +1458,7 @@ type ProfileMutation struct {
 	firstname       *string
 	lastname        *string
 	phone           *string
+	email           *string
 	clearedFields   map[string]struct{}
 	friends         map[uuid.UUID]struct{}
 	removedfriends  map[uuid.UUID]struct{}
@@ -1721,6 +1722,42 @@ func (m *ProfileMutation) ResetPhone() {
 	delete(m.clearedFields, profile.FieldPhone)
 }
 
+// SetEmail sets the "email" field.
+func (m *ProfileMutation) SetEmail(s string) {
+	m.email = &s
+}
+
+// Email returns the value of the "email" field in the mutation.
+func (m *ProfileMutation) Email() (r string, exists bool) {
+	v := m.email
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEmail returns the old "email" field's value of the Profile entity.
+// If the Profile object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProfileMutation) OldEmail(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEmail is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEmail requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEmail: %w", err)
+	}
+	return oldValue.Email, nil
+}
+
+// ResetEmail resets all changes to the "email" field.
+func (m *ProfileMutation) ResetEmail() {
+	m.email = nil
+}
+
 // AddFriendIDs adds the "friends" edge to the Profile entity by ids.
 func (m *ProfileMutation) AddFriendIDs(ids ...uuid.UUID) {
 	if m.friends == nil {
@@ -1863,7 +1900,7 @@ func (m *ProfileMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ProfileMutation) Fields() []string {
-	fields := make([]string, 0, 3)
+	fields := make([]string, 0, 4)
 	if m.firstname != nil {
 		fields = append(fields, profile.FieldFirstname)
 	}
@@ -1872,6 +1909,9 @@ func (m *ProfileMutation) Fields() []string {
 	}
 	if m.phone != nil {
 		fields = append(fields, profile.FieldPhone)
+	}
+	if m.email != nil {
+		fields = append(fields, profile.FieldEmail)
 	}
 	return fields
 }
@@ -1887,6 +1927,8 @@ func (m *ProfileMutation) Field(name string) (ent.Value, bool) {
 		return m.Lastname()
 	case profile.FieldPhone:
 		return m.Phone()
+	case profile.FieldEmail:
+		return m.Email()
 	}
 	return nil, false
 }
@@ -1902,6 +1944,8 @@ func (m *ProfileMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldLastname(ctx)
 	case profile.FieldPhone:
 		return m.OldPhone(ctx)
+	case profile.FieldEmail:
+		return m.OldEmail(ctx)
 	}
 	return nil, fmt.Errorf("unknown Profile field %s", name)
 }
@@ -1931,6 +1975,13 @@ func (m *ProfileMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetPhone(v)
+		return nil
+	case profile.FieldEmail:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEmail(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Profile field %s", name)
@@ -2010,6 +2061,9 @@ func (m *ProfileMutation) ResetField(name string) error {
 		return nil
 	case profile.FieldPhone:
 		m.ResetPhone()
+		return nil
+	case profile.FieldEmail:
+		m.ResetEmail()
 		return nil
 	}
 	return fmt.Errorf("unknown Profile field %s", name)

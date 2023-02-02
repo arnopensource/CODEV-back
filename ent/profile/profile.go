@@ -13,6 +13,8 @@ const (
 	FieldLastname = "lastname"
 	// FieldPhone holds the string denoting the phone field in the database.
 	FieldPhone = "phone"
+	// FieldEmail holds the string denoting the email field in the database.
+	FieldEmail = "email"
 	// EdgeFriends holds the string denoting the friends edge name in mutations.
 	EdgeFriends = "friends"
 	// EdgeBookings holds the string denoting the bookings edge name in mutations.
@@ -52,6 +54,7 @@ var Columns = []string{
 	FieldFirstname,
 	FieldLastname,
 	FieldPhone,
+	FieldEmail,
 }
 
 var (
