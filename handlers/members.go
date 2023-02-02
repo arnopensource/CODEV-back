@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	_ent "github.com/abc3354/CODEV-back/ent"
 	"github.com/abc3354/CODEV-back/ent/event"
 	"github.com/abc3354/CODEV-back/ent/member"
 	"github.com/abc3354/CODEV-back/services/ent"
@@ -77,6 +78,10 @@ func RemoveMember(c *gin.Context) {
 	}
 
 	isAdmin, err = checkAdminRights(body.ProfileID, eventID, c)
+	if _, ok := err.(*_ent.NotFoundError); ok {
+		c.AbortWithError(http.StatusNotFound, err)
+		return
+	}
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -117,6 +122,10 @@ func QuitEvent(c *gin.Context) {
 	client := ent.Get()
 
 	isAdmin, err := checkAdminRights(user.ID, eventID, c)
+	if _, ok := err.(*_ent.NotFoundError); ok {
+		c.AbortWithError(http.StatusNotFound, err)
+		return
+	}
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -165,6 +174,10 @@ func ShareAdminRights(c *gin.Context) {
 	}
 
 	isAdmin, err := checkAdminRights(user.ID, eventID, c)
+	if _, ok := err.(*_ent.NotFoundError); ok {
+		c.AbortWithError(http.StatusNotFound, err)
+		return
+	}
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -177,6 +190,10 @@ func ShareAdminRights(c *gin.Context) {
 	}
 
 	isAdmin, err = checkAdminRights(body.ProfileID, eventID, c)
+	if _, ok := err.(*_ent.NotFoundError); ok {
+		c.AbortWithError(http.StatusNotFound, err)
+		return
+	}
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
