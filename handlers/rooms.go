@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -26,7 +25,6 @@ func GetEmptyRooms(c *gin.Context) {
 			return
 		}
 	}
-	fmt.Println(at)
 
 	result, err := ent.Get().AvailableRoom.Query().Where(availableroom.StartLTE(at), availableroom.EndGTE(at)).WithRooms().All(c)
 	if err != nil {
