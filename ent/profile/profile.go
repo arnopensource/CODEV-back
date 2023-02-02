@@ -19,10 +19,14 @@ const (
 	EdgeFriends = "friends"
 	// EdgeBookings holds the string denoting the bookings edge name in mutations.
 	EdgeBookings = "bookings"
+	// EdgeEvents holds the string denoting the events edge name in mutations.
+	EdgeEvents = "events"
 	// EdgeFriendsData holds the string denoting the friends_data edge name in mutations.
 	EdgeFriendsData = "friends_data"
 	// EdgeBookingsData holds the string denoting the bookings_data edge name in mutations.
 	EdgeBookingsData = "bookings_data"
+	// EdgeEventsData holds the string denoting the events_data edge name in mutations.
+	EdgeEventsData = "events_data"
 	// Table holds the table name of the profile in the database.
 	Table = "profiles"
 	// FriendsTable is the table that holds the friends relation/edge. The primary key declared below.
@@ -32,6 +36,11 @@ const (
 	// BookingsInverseTable is the table name for the Room entity.
 	// It exists in this package in order to avoid circular dependency with the "room" package.
 	BookingsInverseTable = "rooms"
+	// EventsTable is the table that holds the events relation/edge. The primary key declared below.
+	EventsTable = "members"
+	// EventsInverseTable is the table name for the Event entity.
+	// It exists in this package in order to avoid circular dependency with the "event" package.
+	EventsInverseTable = "events"
 	// FriendsDataTable is the table that holds the friends_data relation/edge.
 	FriendsDataTable = "friends"
 	// FriendsDataInverseTable is the table name for the Friend entity.
@@ -46,6 +55,13 @@ const (
 	BookingsDataInverseTable = "bookings"
 	// BookingsDataColumn is the table column denoting the bookings_data relation/edge.
 	BookingsDataColumn = "profile_id"
+	// EventsDataTable is the table that holds the events_data relation/edge.
+	EventsDataTable = "members"
+	// EventsDataInverseTable is the table name for the Member entity.
+	// It exists in this package in order to avoid circular dependency with the "member" package.
+	EventsDataInverseTable = "members"
+	// EventsDataColumn is the table column denoting the events_data relation/edge.
+	EventsDataColumn = "profile_id"
 )
 
 // Columns holds all SQL columns for profile fields.
@@ -64,6 +80,9 @@ var (
 	// BookingsPrimaryKey and BookingsColumn2 are the table columns denoting the
 	// primary key for the bookings relation (M2M).
 	BookingsPrimaryKey = []string{"profile_id", "room_id"}
+	// EventsPrimaryKey and EventsColumn2 are the table columns denoting the
+	// primary key for the events relation (M2M).
+	EventsPrimaryKey = []string{"event_id", "profile_id"}
 )
 
 // ValidColumn reports if the column name is valid (part of the table columns).

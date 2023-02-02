@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/abc3354/CODEV-back/ent/availableroom"
 	"github.com/abc3354/CODEV-back/ent/booking"
+	"github.com/abc3354/CODEV-back/ent/event"
 	"github.com/abc3354/CODEV-back/ent/predicate"
 	"github.com/abc3354/CODEV-back/ent/profile"
 	"github.com/abc3354/CODEV-back/ent/room"
@@ -31,6 +32,7 @@ type RoomQuery struct {
 	predicates       []predicate.Room
 	withBookings     *ProfileQuery
 	withAvailability *AvailableRoomQuery
+	withEvents       *EventQuery
 	withBookingsData *BookingQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -105,6 +107,28 @@ func (rq *RoomQuery) QueryAvailability() *AvailableRoomQuery {
 			sqlgraph.From(room.Table, room.FieldID, selector),
 			sqlgraph.To(availableroom.Table, availableroom.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, room.AvailabilityTable, room.AvailabilityColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(rq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryEvents chains the current query on the "events" edge.
+func (rq *RoomQuery) QueryEvents() *EventQuery {
+	query := (&EventClient{config: rq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := rq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := rq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(room.Table, room.FieldID, selector),
+			sqlgraph.To(event.Table, event.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, room.EventsTable, room.EventsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(rq.driver.Dialect(), step)
 		return fromU, nil
@@ -327,6 +351,7 @@ func (rq *RoomQuery) Clone() *RoomQuery {
 		predicates:       append([]predicate.Room{}, rq.predicates...),
 		withBookings:     rq.withBookings.Clone(),
 		withAvailability: rq.withAvailability.Clone(),
+		withEvents:       rq.withEvents.Clone(),
 		withBookingsData: rq.withBookingsData.Clone(),
 		// clone intermediate query.
 		sql:    rq.sql.Clone(),
@@ -354,6 +379,17 @@ func (rq *RoomQuery) WithAvailability(opts ...func(*AvailableRoomQuery)) *RoomQu
 		opt(query)
 	}
 	rq.withAvailability = query
+	return rq
+}
+
+// WithEvents tells the query-builder to eager-load the nodes that are connected to
+// the "events" edge. The optional arguments are used to configure the query builder of the edge.
+func (rq *RoomQuery) WithEvents(opts ...func(*EventQuery)) *RoomQuery {
+	query := (&EventClient{config: rq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	rq.withEvents = query
 	return rq
 }
 
@@ -446,9 +482,10 @@ func (rq *RoomQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Room, e
 	var (
 		nodes       = []*Room{}
 		_spec       = rq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			rq.withBookings != nil,
 			rq.withAvailability != nil,
+			rq.withEvents != nil,
 			rq.withBookingsData != nil,
 		}
 	)
@@ -481,6 +518,13 @@ func (rq *RoomQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Room, e
 		if err := rq.loadAvailability(ctx, query, nodes,
 			func(n *Room) { n.Edges.Availability = []*AvailableRoom{} },
 			func(n *Room, e *AvailableRoom) { n.Edges.Availability = append(n.Edges.Availability, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := rq.withEvents; query != nil {
+		if err := rq.loadEvents(ctx, query, nodes,
+			func(n *Room) { n.Edges.Events = []*Event{} },
+			func(n *Room, e *Event) { n.Edges.Events = append(n.Edges.Events, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -578,6 +622,37 @@ func (rq *RoomQuery) loadAvailability(ctx context.Context, query *AvailableRoomQ
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "room_availability" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (rq *RoomQuery) loadEvents(ctx context.Context, query *EventQuery, nodes []*Room, init func(*Room), assign func(*Room, *Event)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Room)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Event(func(s *sql.Selector) {
+		s.Where(sql.InValues(room.EventsColumn, fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.room_events
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "room_events" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "room_events" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

@@ -35,13 +35,17 @@ type ProfileEdges struct {
 	Friends []*Profile `json:"friends,omitempty"`
 	// Bookings holds the value of the bookings edge.
 	Bookings []*Room `json:"bookings,omitempty"`
+	// Events holds the value of the events edge.
+	Events []*Event `json:"events,omitempty"`
 	// FriendsData holds the value of the friends_data edge.
 	FriendsData []*Friend `json:"friends_data,omitempty"`
 	// BookingsData holds the value of the bookings_data edge.
 	BookingsData []*Booking `json:"bookings_data,omitempty"`
+	// EventsData holds the value of the events_data edge.
+	EventsData []*Member `json:"events_data,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [6]bool
 }
 
 // FriendsOrErr returns the Friends value or an error if the edge
@@ -62,10 +66,19 @@ func (e ProfileEdges) BookingsOrErr() ([]*Room, error) {
 	return nil, &NotLoadedError{edge: "bookings"}
 }
 
+// EventsOrErr returns the Events value or an error if the edge
+// was not loaded in eager-loading.
+func (e ProfileEdges) EventsOrErr() ([]*Event, error) {
+	if e.loadedTypes[2] {
+		return e.Events, nil
+	}
+	return nil, &NotLoadedError{edge: "events"}
+}
+
 // FriendsDataOrErr returns the FriendsData value or an error if the edge
 // was not loaded in eager-loading.
 func (e ProfileEdges) FriendsDataOrErr() ([]*Friend, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.FriendsData, nil
 	}
 	return nil, &NotLoadedError{edge: "friends_data"}
@@ -74,10 +87,19 @@ func (e ProfileEdges) FriendsDataOrErr() ([]*Friend, error) {
 // BookingsDataOrErr returns the BookingsData value or an error if the edge
 // was not loaded in eager-loading.
 func (e ProfileEdges) BookingsDataOrErr() ([]*Booking, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[4] {
 		return e.BookingsData, nil
 	}
 	return nil, &NotLoadedError{edge: "bookings_data"}
+}
+
+// EventsDataOrErr returns the EventsData value or an error if the edge
+// was not loaded in eager-loading.
+func (e ProfileEdges) EventsDataOrErr() ([]*Member, error) {
+	if e.loadedTypes[5] {
+		return e.EventsData, nil
+	}
+	return nil, &NotLoadedError{edge: "events_data"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -149,6 +171,11 @@ func (pr *Profile) QueryBookings() *RoomQuery {
 	return (&ProfileClient{config: pr.config}).QueryBookings(pr)
 }
 
+// QueryEvents queries the "events" edge of the Profile entity.
+func (pr *Profile) QueryEvents() *EventQuery {
+	return (&ProfileClient{config: pr.config}).QueryEvents(pr)
+}
+
 // QueryFriendsData queries the "friends_data" edge of the Profile entity.
 func (pr *Profile) QueryFriendsData() *FriendQuery {
 	return (&ProfileClient{config: pr.config}).QueryFriendsData(pr)
@@ -157,6 +184,11 @@ func (pr *Profile) QueryFriendsData() *FriendQuery {
 // QueryBookingsData queries the "bookings_data" edge of the Profile entity.
 func (pr *Profile) QueryBookingsData() *BookingQuery {
 	return (&ProfileClient{config: pr.config}).QueryBookingsData(pr)
+}
+
+// QueryEventsData queries the "events_data" edge of the Profile entity.
+func (pr *Profile) QueryEventsData() *MemberQuery {
+	return (&ProfileClient{config: pr.config}).QueryEventsData(pr)
 }
 
 // Update returns a builder for updating this Profile.

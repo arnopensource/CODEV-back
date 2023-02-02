@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/abc3354/CODEV-back/ent/availableroom"
+	"github.com/abc3354/CODEV-back/ent/event"
 	"github.com/abc3354/CODEV-back/ent/predicate"
 	"github.com/abc3354/CODEV-back/ent/profile"
 	"github.com/abc3354/CODEV-back/ent/room"
@@ -91,6 +92,21 @@ func (ru *RoomUpdate) AddAvailability(a ...*AvailableRoom) *RoomUpdate {
 	return ru.AddAvailabilityIDs(ids...)
 }
 
+// AddEventIDs adds the "events" edge to the Event entity by IDs.
+func (ru *RoomUpdate) AddEventIDs(ids ...int) *RoomUpdate {
+	ru.mutation.AddEventIDs(ids...)
+	return ru
+}
+
+// AddEvents adds the "events" edges to the Event entity.
+func (ru *RoomUpdate) AddEvents(e ...*Event) *RoomUpdate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return ru.AddEventIDs(ids...)
+}
+
 // Mutation returns the RoomMutation object of the builder.
 func (ru *RoomUpdate) Mutation() *RoomMutation {
 	return ru.mutation
@@ -136,6 +152,27 @@ func (ru *RoomUpdate) RemoveAvailability(a ...*AvailableRoom) *RoomUpdate {
 		ids[i] = a[i].ID
 	}
 	return ru.RemoveAvailabilityIDs(ids...)
+}
+
+// ClearEvents clears all "events" edges to the Event entity.
+func (ru *RoomUpdate) ClearEvents() *RoomUpdate {
+	ru.mutation.ClearEvents()
+	return ru
+}
+
+// RemoveEventIDs removes the "events" edge to Event entities by IDs.
+func (ru *RoomUpdate) RemoveEventIDs(ids ...int) *RoomUpdate {
+	ru.mutation.RemoveEventIDs(ids...)
+	return ru
+}
+
+// RemoveEvents removes "events" edges to Event entities.
+func (ru *RoomUpdate) RemoveEvents(e ...*Event) *RoomUpdate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return ru.RemoveEventIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -306,6 +343,60 @@ func (ru *RoomUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if ru.mutation.EventsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   room.EventsTable,
+			Columns: []string{room.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: event.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ru.mutation.RemovedEventsIDs(); len(nodes) > 0 && !ru.mutation.EventsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   room.EventsTable,
+			Columns: []string{room.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: event.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ru.mutation.EventsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   room.EventsTable,
+			Columns: []string{room.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: event.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, ru.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{room.Label}
@@ -387,6 +478,21 @@ func (ruo *RoomUpdateOne) AddAvailability(a ...*AvailableRoom) *RoomUpdateOne {
 	return ruo.AddAvailabilityIDs(ids...)
 }
 
+// AddEventIDs adds the "events" edge to the Event entity by IDs.
+func (ruo *RoomUpdateOne) AddEventIDs(ids ...int) *RoomUpdateOne {
+	ruo.mutation.AddEventIDs(ids...)
+	return ruo
+}
+
+// AddEvents adds the "events" edges to the Event entity.
+func (ruo *RoomUpdateOne) AddEvents(e ...*Event) *RoomUpdateOne {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return ruo.AddEventIDs(ids...)
+}
+
 // Mutation returns the RoomMutation object of the builder.
 func (ruo *RoomUpdateOne) Mutation() *RoomMutation {
 	return ruo.mutation
@@ -432,6 +538,27 @@ func (ruo *RoomUpdateOne) RemoveAvailability(a ...*AvailableRoom) *RoomUpdateOne
 		ids[i] = a[i].ID
 	}
 	return ruo.RemoveAvailabilityIDs(ids...)
+}
+
+// ClearEvents clears all "events" edges to the Event entity.
+func (ruo *RoomUpdateOne) ClearEvents() *RoomUpdateOne {
+	ruo.mutation.ClearEvents()
+	return ruo
+}
+
+// RemoveEventIDs removes the "events" edge to Event entities by IDs.
+func (ruo *RoomUpdateOne) RemoveEventIDs(ids ...int) *RoomUpdateOne {
+	ruo.mutation.RemoveEventIDs(ids...)
+	return ruo
+}
+
+// RemoveEvents removes "events" edges to Event entities.
+func (ruo *RoomUpdateOne) RemoveEvents(e ...*Event) *RoomUpdateOne {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return ruo.RemoveEventIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -618,6 +745,60 @@ func (ruo *RoomUpdateOne) sqlSave(ctx context.Context) (_node *Room, err error) 
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: availableroom.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if ruo.mutation.EventsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   room.EventsTable,
+			Columns: []string{room.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: event.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ruo.mutation.RemovedEventsIDs(); len(nodes) > 0 && !ruo.mutation.EventsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   room.EventsTable,
+			Columns: []string{room.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: event.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ruo.mutation.EventsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   room.EventsTable,
+			Columns: []string{room.EventsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: event.FieldID,
 				},
 			},
 		}

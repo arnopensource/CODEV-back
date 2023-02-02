@@ -25,5 +25,6 @@ func (Room) Edges() []ent.Edge {
 			Ref("bookings").
 			Through("bookings_data", Booking.Type),
 		edge.To("availability", AvailableRoom.Type),
+		edge.To("events", Event.Type),
 	}
 }

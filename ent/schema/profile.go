@@ -34,5 +34,6 @@ func (Profile) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("friends", Profile.Type).Through("friends_data", Friend.Type),
 		edge.To("bookings", Room.Type).Through("bookings_data", Booking.Type),
+		edge.From("events", Event.Type).Ref("profiles").Through("events_data", Member.Type),
 	}
 }

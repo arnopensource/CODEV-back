@@ -19,6 +19,8 @@ const (
 	EdgeBookings = "bookings"
 	// EdgeAvailability holds the string denoting the availability edge name in mutations.
 	EdgeAvailability = "availability"
+	// EdgeEvents holds the string denoting the events edge name in mutations.
+	EdgeEvents = "events"
 	// EdgeBookingsData holds the string denoting the bookings_data edge name in mutations.
 	EdgeBookingsData = "bookings_data"
 	// Table holds the table name of the room in the database.
@@ -35,6 +37,13 @@ const (
 	AvailabilityInverseTable = "available_rooms"
 	// AvailabilityColumn is the table column denoting the availability relation/edge.
 	AvailabilityColumn = "room_availability"
+	// EventsTable is the table that holds the events relation/edge.
+	EventsTable = "events"
+	// EventsInverseTable is the table name for the Event entity.
+	// It exists in this package in order to avoid circular dependency with the "event" package.
+	EventsInverseTable = "events"
+	// EventsColumn is the table column denoting the events relation/edge.
+	EventsColumn = "room_events"
 	// BookingsDataTable is the table that holds the bookings_data relation/edge.
 	BookingsDataTable = "bookings"
 	// BookingsDataInverseTable is the table name for the Booking entity.
