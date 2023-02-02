@@ -1,18 +1,17 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/abc3354/CODEV-back/ent/availableroom"
 	"github.com/abc3354/CODEV-back/ent/booking"
 	"github.com/abc3354/CODEV-back/ent/room"
 	"github.com/abc3354/CODEV-back/services/ent"
-	"github.com/gin-gonic/gin/binding"
 
-	"github.com/abc3354/CODEV-back/services/ade"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 )
 
 func GetEmptyRooms(c *gin.Context) {
@@ -20,15 +19,19 @@ func GetEmptyRooms(c *gin.Context) {
 
 	atStr := c.Query("time")
 	if atStr != "" {
-		atInt, err := strconv.Atoi(atStr)
+		var err error
+		at, err = time.Parse(time.RFC3339Nano, atStr)
 		if err != nil {
 			c.AbortWithError(http.StatusBadRequest, err)
 			return
 		}
-		at = time.Unix(int64(atInt), 0)
 	}
+	fmt.Println(at)
 
-	result := ade.GetEmptyRooms(at)
+	result, err := ent.Get().AvailableRoom.Query().Where(availableroom.StartLTE(at), availableroom.EndGTE(at)).WithRooms().All(c)
+	if err != nil {
+		return
+	}
 	c.JSON(http.StatusOK, result)
 }
 

@@ -4,7 +4,6 @@ import (
 	"log"
 
 	"github.com/abc3354/CODEV-back/handlers"
-	"github.com/abc3354/CODEV-back/services/ade"
 	"github.com/abc3354/CODEV-back/services/database"
 	"github.com/abc3354/CODEV-back/services/ent"
 
@@ -15,7 +14,6 @@ import (
 func main() {
 	defer database.Close()
 	defer ent.Close()
-	ade.Update()
 
 	r := gin.Default()
 
