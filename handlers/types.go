@@ -37,7 +37,7 @@ type BookingBody struct {
 
 type FriendRequestDecisionBody struct {
 	ID       string `json:"id" binding:"required"`
-	Accepted bool   `json:"accepted" binding:"required"`
+	Accepted *bool  `json:"accepted" binding:"required"`
 }
 
 type UpdateUserBody struct {

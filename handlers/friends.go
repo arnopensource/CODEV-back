@@ -29,20 +29,19 @@ func getFriendsByUserId(id uuid.UUID) []*_ent.ProfileQuery {
 }
 
 func AddFriend(c *gin.Context) {
-	var body FriendRequestBody
-
-	if err := c.MustBindWith(&body, binding.JSON); err != nil {
-		return
-	}
-
 	user, err := checkToken(c)
 	if err != nil {
 		c.AbortWithError(http.StatusUnauthorized, err)
 		return
 	}
 
-	friendID, err := uuid.Parse(body.ID)
+	var body FriendRequestBody
+	if err = c.ShouldBindWith(&body, binding.JSON); err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
 
+	friendID, err := uuid.Parse(body.ID)
 	if err != nil {
 		c.AbortWithError(http.StatusBadRequest, err)
 		return
@@ -95,7 +94,8 @@ func GetFriends(c *gin.Context) {
 func FriendRequestDecision(c *gin.Context) {
 	var body FriendRequestDecisionBody
 
-	if err := c.MustBindWith(&body, binding.JSON); err != nil {
+	if err := c.ShouldBindWith(&body, binding.JSON); err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
@@ -120,7 +120,7 @@ func FriendRequestDecision(c *gin.Context) {
 			friend.FriendID(user.ID),
 		)
 
-	if body.Accepted {
+	if *body.Accepted {
 		friendRequest, err := client.Friend.
 			Query().
 			Where(friendPredicate).
@@ -163,15 +163,15 @@ func FriendRequestDecision(c *gin.Context) {
 }
 
 func RemoveFriend(c *gin.Context) {
-	var body FriendRequestBody
-
-	if err := c.MustBindWith(&body, binding.JSON); err != nil {
-		return
-	}
-
 	user, err := checkToken(c)
 	if err != nil {
 		c.AbortWithError(http.StatusUnauthorized, err)
+		return
+	}
+
+	var body FriendRequestBody
+	if err = c.ShouldBindWith(&body, binding.JSON); err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
