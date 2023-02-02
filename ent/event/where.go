@@ -339,6 +339,33 @@ func HasRoomWith(preds ...predicate.Room) predicate.Event {
 	})
 }
 
+// HasInvited applies the HasEdge predicate on the "invited" edge.
+func HasInvited() predicate.Event {
+	return predicate.Event(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, InvitedTable, InvitedPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasInvitedWith applies the HasEdge predicate on the "invited" edge with a given conditions (other predicates).
+func HasInvitedWith(preds ...predicate.Profile) predicate.Event {
+	return predicate.Event(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(InvitedInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, InvitedTable, InvitedPrimaryKey...),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasMembers applies the HasEdge predicate on the "members" edge.
 func HasMembers() predicate.Event {
 	return predicate.Event(func(s *sql.Selector) {
@@ -357,6 +384,33 @@ func HasMembersWith(preds ...predicate.Member) predicate.Event {
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(MembersInverseTable, MembersColumn),
 			sqlgraph.Edge(sqlgraph.O2M, true, MembersTable, MembersColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasInvites applies the HasEdge predicate on the "invites" edge.
+func HasInvites() predicate.Event {
+	return predicate.Event(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, InvitesTable, InvitesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasInvitesWith applies the HasEdge predicate on the "invites" edge with a given conditions (other predicates).
+func HasInvitesWith(preds ...predicate.EventInvite) predicate.Event {
+	return predicate.Event(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(InvitesInverseTable, InvitesColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, InvitesTable, InvitesColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

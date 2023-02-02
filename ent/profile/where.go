@@ -445,6 +445,33 @@ func HasEventsWith(preds ...predicate.Event) predicate.Profile {
 	})
 }
 
+// HasInvitedTo applies the HasEdge predicate on the "invitedTo" edge.
+func HasInvitedTo() predicate.Profile {
+	return predicate.Profile(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, InvitedToTable, InvitedToPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasInvitedToWith applies the HasEdge predicate on the "invitedTo" edge with a given conditions (other predicates).
+func HasInvitedToWith(preds ...predicate.Event) predicate.Profile {
+	return predicate.Profile(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(InvitedToInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, InvitedToTable, InvitedToPrimaryKey...),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasFriendsData applies the HasEdge predicate on the "friends_data" edge.
 func HasFriendsData() predicate.Profile {
 	return predicate.Profile(func(s *sql.Selector) {
@@ -517,6 +544,33 @@ func HasEventsDataWith(preds ...predicate.Member) predicate.Profile {
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(EventsDataInverseTable, EventsDataColumn),
 			sqlgraph.Edge(sqlgraph.O2M, true, EventsDataTable, EventsDataColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasInvitesData applies the HasEdge predicate on the "invites_data" edge.
+func HasInvitesData() predicate.Profile {
+	return predicate.Profile(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, InvitesDataTable, InvitesDataColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasInvitesDataWith applies the HasEdge predicate on the "invites_data" edge with a given conditions (other predicates).
+func HasInvitesDataWith(preds ...predicate.EventInvite) predicate.Profile {
+	return predicate.Profile(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(InvitesDataInverseTable, InvitesDataColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, InvitesDataTable, InvitesDataColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

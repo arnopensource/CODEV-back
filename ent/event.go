@@ -37,11 +37,15 @@ type EventEdges struct {
 	Profiles []*Profile `json:"profiles,omitempty"`
 	// Room holds the value of the room edge.
 	Room *Room `json:"room,omitempty"`
+	// Invited holds the value of the invited edge.
+	Invited []*Profile `json:"invited,omitempty"`
 	// Members holds the value of the members edge.
 	Members []*Member `json:"members,omitempty"`
+	// Invites holds the value of the invites edge.
+	Invites []*EventInvite `json:"invites,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [5]bool
 }
 
 // ProfilesOrErr returns the Profiles value or an error if the edge
@@ -66,13 +70,31 @@ func (e EventEdges) RoomOrErr() (*Room, error) {
 	return nil, &NotLoadedError{edge: "room"}
 }
 
+// InvitedOrErr returns the Invited value or an error if the edge
+// was not loaded in eager-loading.
+func (e EventEdges) InvitedOrErr() ([]*Profile, error) {
+	if e.loadedTypes[2] {
+		return e.Invited, nil
+	}
+	return nil, &NotLoadedError{edge: "invited"}
+}
+
 // MembersOrErr returns the Members value or an error if the edge
 // was not loaded in eager-loading.
 func (e EventEdges) MembersOrErr() ([]*Member, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.Members, nil
 	}
 	return nil, &NotLoadedError{edge: "members"}
+}
+
+// InvitesOrErr returns the Invites value or an error if the edge
+// was not loaded in eager-loading.
+func (e EventEdges) InvitesOrErr() ([]*EventInvite, error) {
+	if e.loadedTypes[4] {
+		return e.Invites, nil
+	}
+	return nil, &NotLoadedError{edge: "invites"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -155,9 +177,19 @@ func (e *Event) QueryRoom() *RoomQuery {
 	return (&EventClient{config: e.config}).QueryRoom(e)
 }
 
+// QueryInvited queries the "invited" edge of the Event entity.
+func (e *Event) QueryInvited() *ProfileQuery {
+	return (&EventClient{config: e.config}).QueryInvited(e)
+}
+
 // QueryMembers queries the "members" edge of the Event entity.
 func (e *Event) QueryMembers() *MemberQuery {
 	return (&EventClient{config: e.config}).QueryMembers(e)
+}
+
+// QueryInvites queries the "invites" edge of the Event entity.
+func (e *Event) QueryInvites() *EventInviteQuery {
+	return (&EventClient{config: e.config}).QueryInvites(e)
 }
 
 // Update returns a builder for updating this Event.

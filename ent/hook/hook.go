@@ -45,6 +45,18 @@ func (f EventFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.EventMutation", m)
 }
 
+// The EventInviteFunc type is an adapter to allow the use of ordinary
+// function as EventInvite mutator.
+type EventInviteFunc func(context.Context, *ent.EventInviteMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f EventInviteFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.EventInviteMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.EventInviteMutation", m)
+}
+
 // The FriendFunc type is an adapter to allow the use of ordinary
 // function as Friend mutator.
 type FriendFunc func(context.Context, *ent.FriendMutation) (ent.Value, error)

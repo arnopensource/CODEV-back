@@ -21,7 +21,8 @@ func (Event) Fields() []ent.Field {
 
 func (Event) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("profiles", Profile.Type).Through("members", Member.Type).Required(),
+		edge.To("profiles", Profile.Type).Through("members", Member.Type),
 		edge.From("room", Room.Type).Ref("events").Unique().Required(),
+		edge.To("invited", Profile.Type).Through("invites", EventInvite.Type),
 	}
 }

@@ -81,6 +81,21 @@ func (eu *EventUpdate) SetRoom(r *Room) *EventUpdate {
 	return eu.SetRoomID(r.ID)
 }
 
+// AddInvitedIDs adds the "invited" edge to the Profile entity by IDs.
+func (eu *EventUpdate) AddInvitedIDs(ids ...uuid.UUID) *EventUpdate {
+	eu.mutation.AddInvitedIDs(ids...)
+	return eu
+}
+
+// AddInvited adds the "invited" edges to the Profile entity.
+func (eu *EventUpdate) AddInvited(p ...*Profile) *EventUpdate {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return eu.AddInvitedIDs(ids...)
+}
+
 // Mutation returns the EventMutation object of the builder.
 func (eu *EventUpdate) Mutation() *EventMutation {
 	return eu.mutation
@@ -111,6 +126,27 @@ func (eu *EventUpdate) RemoveProfiles(p ...*Profile) *EventUpdate {
 func (eu *EventUpdate) ClearRoom() *EventUpdate {
 	eu.mutation.ClearRoom()
 	return eu
+}
+
+// ClearInvited clears all "invited" edges to the Profile entity.
+func (eu *EventUpdate) ClearInvited() *EventUpdate {
+	eu.mutation.ClearInvited()
+	return eu
+}
+
+// RemoveInvitedIDs removes the "invited" edge to Profile entities by IDs.
+func (eu *EventUpdate) RemoveInvitedIDs(ids ...uuid.UUID) *EventUpdate {
+	eu.mutation.RemoveInvitedIDs(ids...)
+	return eu
+}
+
+// RemoveInvited removes "invited" edges to Profile entities.
+func (eu *EventUpdate) RemoveInvited(p ...*Profile) *EventUpdate {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return eu.RemoveInvitedIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -282,6 +318,72 @@ func (eu *EventUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if eu.mutation.InvitedCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   event.InvitedTable,
+			Columns: event.InvitedPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: profile.FieldID,
+				},
+			},
+		}
+		createE := &EventInviteCreate{config: eu.config, mutation: newEventInviteMutation(eu.config, OpCreate)}
+		createE.defaults()
+		_, specE := createE.createSpec()
+		edge.Target.Fields = specE.Fields
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := eu.mutation.RemovedInvitedIDs(); len(nodes) > 0 && !eu.mutation.InvitedCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   event.InvitedTable,
+			Columns: event.InvitedPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: profile.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		createE := &EventInviteCreate{config: eu.config, mutation: newEventInviteMutation(eu.config, OpCreate)}
+		createE.defaults()
+		_, specE := createE.createSpec()
+		edge.Target.Fields = specE.Fields
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := eu.mutation.InvitedIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   event.InvitedTable,
+			Columns: event.InvitedPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: profile.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		createE := &EventInviteCreate{config: eu.config, mutation: newEventInviteMutation(eu.config, OpCreate)}
+		createE.defaults()
+		_, specE := createE.createSpec()
+		edge.Target.Fields = specE.Fields
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, eu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{event.Label}
@@ -352,6 +454,21 @@ func (euo *EventUpdateOne) SetRoom(r *Room) *EventUpdateOne {
 	return euo.SetRoomID(r.ID)
 }
 
+// AddInvitedIDs adds the "invited" edge to the Profile entity by IDs.
+func (euo *EventUpdateOne) AddInvitedIDs(ids ...uuid.UUID) *EventUpdateOne {
+	euo.mutation.AddInvitedIDs(ids...)
+	return euo
+}
+
+// AddInvited adds the "invited" edges to the Profile entity.
+func (euo *EventUpdateOne) AddInvited(p ...*Profile) *EventUpdateOne {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return euo.AddInvitedIDs(ids...)
+}
+
 // Mutation returns the EventMutation object of the builder.
 func (euo *EventUpdateOne) Mutation() *EventMutation {
 	return euo.mutation
@@ -382,6 +499,27 @@ func (euo *EventUpdateOne) RemoveProfiles(p ...*Profile) *EventUpdateOne {
 func (euo *EventUpdateOne) ClearRoom() *EventUpdateOne {
 	euo.mutation.ClearRoom()
 	return euo
+}
+
+// ClearInvited clears all "invited" edges to the Profile entity.
+func (euo *EventUpdateOne) ClearInvited() *EventUpdateOne {
+	euo.mutation.ClearInvited()
+	return euo
+}
+
+// RemoveInvitedIDs removes the "invited" edge to Profile entities by IDs.
+func (euo *EventUpdateOne) RemoveInvitedIDs(ids ...uuid.UUID) *EventUpdateOne {
+	euo.mutation.RemoveInvitedIDs(ids...)
+	return euo
+}
+
+// RemoveInvited removes "invited" edges to Profile entities.
+func (euo *EventUpdateOne) RemoveInvited(p ...*Profile) *EventUpdateOne {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return euo.RemoveInvitedIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -575,6 +713,72 @@ func (euo *EventUpdateOne) sqlSave(ctx context.Context) (_node *Event, err error
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if euo.mutation.InvitedCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   event.InvitedTable,
+			Columns: event.InvitedPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: profile.FieldID,
+				},
+			},
+		}
+		createE := &EventInviteCreate{config: euo.config, mutation: newEventInviteMutation(euo.config, OpCreate)}
+		createE.defaults()
+		_, specE := createE.createSpec()
+		edge.Target.Fields = specE.Fields
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := euo.mutation.RemovedInvitedIDs(); len(nodes) > 0 && !euo.mutation.InvitedCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   event.InvitedTable,
+			Columns: event.InvitedPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: profile.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		createE := &EventInviteCreate{config: euo.config, mutation: newEventInviteMutation(euo.config, OpCreate)}
+		createE.defaults()
+		_, specE := createE.createSpec()
+		edge.Target.Fields = specE.Fields
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := euo.mutation.InvitedIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   event.InvitedTable,
+			Columns: event.InvitedPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: profile.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		createE := &EventInviteCreate{config: euo.config, mutation: newEventInviteMutation(euo.config, OpCreate)}
+		createE.defaults()
+		_, specE := createE.createSpec()
+		edge.Target.Fields = specE.Fields
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Event{config: euo.config}

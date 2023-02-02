@@ -30,6 +30,7 @@ type (
 		AvailableRoom []ent.Hook
 		Booking       []ent.Hook
 		Event         []ent.Hook
+		EventInvite   []ent.Hook
 		Friend        []ent.Hook
 		Member        []ent.Hook
 		Profile       []ent.Hook
@@ -39,6 +40,7 @@ type (
 		AvailableRoom []ent.Interceptor
 		Booking       []ent.Interceptor
 		Event         []ent.Interceptor
+		EventInvite   []ent.Interceptor
 		Friend        []ent.Interceptor
 		Member        []ent.Interceptor
 		Profile       []ent.Interceptor

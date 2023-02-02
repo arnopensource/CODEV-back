@@ -14,6 +14,7 @@ import (
 	"github.com/abc3354/CODEV-back/ent/availableroom"
 	"github.com/abc3354/CODEV-back/ent/booking"
 	"github.com/abc3354/CODEV-back/ent/event"
+	"github.com/abc3354/CODEV-back/ent/eventinvite"
 	"github.com/abc3354/CODEV-back/ent/friend"
 	"github.com/abc3354/CODEV-back/ent/member"
 	"github.com/abc3354/CODEV-back/ent/profile"
@@ -35,6 +36,8 @@ type Client struct {
 	Booking *BookingClient
 	// Event is the client for interacting with the Event builders.
 	Event *EventClient
+	// EventInvite is the client for interacting with the EventInvite builders.
+	EventInvite *EventInviteClient
 	// Friend is the client for interacting with the Friend builders.
 	Friend *FriendClient
 	// Member is the client for interacting with the Member builders.
@@ -59,6 +62,7 @@ func (c *Client) init() {
 	c.AvailableRoom = NewAvailableRoomClient(c.config)
 	c.Booking = NewBookingClient(c.config)
 	c.Event = NewEventClient(c.config)
+	c.EventInvite = NewEventInviteClient(c.config)
 	c.Friend = NewFriendClient(c.config)
 	c.Member = NewMemberClient(c.config)
 	c.Profile = NewProfileClient(c.config)
@@ -99,6 +103,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		AvailableRoom: NewAvailableRoomClient(cfg),
 		Booking:       NewBookingClient(cfg),
 		Event:         NewEventClient(cfg),
+		EventInvite:   NewEventInviteClient(cfg),
 		Friend:        NewFriendClient(cfg),
 		Member:        NewMemberClient(cfg),
 		Profile:       NewProfileClient(cfg),
@@ -125,6 +130,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		AvailableRoom: NewAvailableRoomClient(cfg),
 		Booking:       NewBookingClient(cfg),
 		Event:         NewEventClient(cfg),
+		EventInvite:   NewEventInviteClient(cfg),
 		Friend:        NewFriendClient(cfg),
 		Member:        NewMemberClient(cfg),
 		Profile:       NewProfileClient(cfg),
@@ -160,6 +166,7 @@ func (c *Client) Use(hooks ...Hook) {
 	c.AvailableRoom.Use(hooks...)
 	c.Booking.Use(hooks...)
 	c.Event.Use(hooks...)
+	c.EventInvite.Use(hooks...)
 	c.Friend.Use(hooks...)
 	c.Member.Use(hooks...)
 	c.Profile.Use(hooks...)
@@ -172,6 +179,7 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	c.AvailableRoom.Intercept(interceptors...)
 	c.Booking.Intercept(interceptors...)
 	c.Event.Intercept(interceptors...)
+	c.EventInvite.Intercept(interceptors...)
 	c.Friend.Intercept(interceptors...)
 	c.Member.Intercept(interceptors...)
 	c.Profile.Intercept(interceptors...)
@@ -187,6 +195,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Booking.mutate(ctx, m)
 	case *EventMutation:
 		return c.Event.mutate(ctx, m)
+	case *EventInviteMutation:
+		return c.EventInvite.mutate(ctx, m)
 	case *FriendMutation:
 		return c.Friend.mutate(ctx, m)
 	case *MemberMutation:
@@ -557,6 +567,22 @@ func (c *EventClient) QueryRoom(e *Event) *RoomQuery {
 	return query
 }
 
+// QueryInvited queries the invited edge of a Event.
+func (c *EventClient) QueryInvited(e *Event) *ProfileQuery {
+	query := (&ProfileClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := e.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(event.Table, event.FieldID, id),
+			sqlgraph.To(profile.Table, profile.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, event.InvitedTable, event.InvitedPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(e.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryMembers queries the members edge of a Event.
 func (c *EventClient) QueryMembers(e *Event) *MemberQuery {
 	query := (&MemberClient{config: c.config}).Query()
@@ -566,6 +592,22 @@ func (c *EventClient) QueryMembers(e *Event) *MemberQuery {
 			sqlgraph.From(event.Table, event.FieldID, id),
 			sqlgraph.To(member.Table, member.EventColumn),
 			sqlgraph.Edge(sqlgraph.O2M, true, event.MembersTable, event.MembersColumn),
+		)
+		fromV = sqlgraph.Neighbors(e.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryInvites queries the invites edge of a Event.
+func (c *EventClient) QueryInvites(e *Event) *EventInviteQuery {
+	query := (&EventInviteClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := e.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(event.Table, event.FieldID, id),
+			sqlgraph.To(eventinvite.Table, eventinvite.EventColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, event.InvitesTable, event.InvitesColumn),
 		)
 		fromV = sqlgraph.Neighbors(e.driver.Dialect(), step)
 		return fromV, nil
@@ -595,6 +637,106 @@ func (c *EventClient) mutate(ctx context.Context, m *EventMutation) (Value, erro
 		return (&EventDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Event mutation op: %q", m.Op())
+	}
+}
+
+// EventInviteClient is a client for the EventInvite schema.
+type EventInviteClient struct {
+	config
+}
+
+// NewEventInviteClient returns a client for the EventInvite from the given config.
+func NewEventInviteClient(c config) *EventInviteClient {
+	return &EventInviteClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `eventinvite.Hooks(f(g(h())))`.
+func (c *EventInviteClient) Use(hooks ...Hook) {
+	c.hooks.EventInvite = append(c.hooks.EventInvite, hooks...)
+}
+
+// Use adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `eventinvite.Intercept(f(g(h())))`.
+func (c *EventInviteClient) Intercept(interceptors ...Interceptor) {
+	c.inters.EventInvite = append(c.inters.EventInvite, interceptors...)
+}
+
+// Create returns a builder for creating a EventInvite entity.
+func (c *EventInviteClient) Create() *EventInviteCreate {
+	mutation := newEventInviteMutation(c.config, OpCreate)
+	return &EventInviteCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of EventInvite entities.
+func (c *EventInviteClient) CreateBulk(builders ...*EventInviteCreate) *EventInviteCreateBulk {
+	return &EventInviteCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for EventInvite.
+func (c *EventInviteClient) Update() *EventInviteUpdate {
+	mutation := newEventInviteMutation(c.config, OpUpdate)
+	return &EventInviteUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *EventInviteClient) UpdateOne(ei *EventInvite) *EventInviteUpdateOne {
+	mutation := newEventInviteMutation(c.config, OpUpdateOne)
+	mutation.event = &ei.EventID
+	mutation.profile = &ei.ProfileID
+	return &EventInviteUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for EventInvite.
+func (c *EventInviteClient) Delete() *EventInviteDelete {
+	mutation := newEventInviteMutation(c.config, OpDelete)
+	return &EventInviteDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Query returns a query builder for EventInvite.
+func (c *EventInviteClient) Query() *EventInviteQuery {
+	return &EventInviteQuery{
+		config: c.config,
+		inters: c.Interceptors(),
+	}
+}
+
+// QueryProfile queries the profile edge of a EventInvite.
+func (c *EventInviteClient) QueryProfile(ei *EventInvite) *ProfileQuery {
+	return c.Query().
+		Where(eventinvite.EventID(ei.EventID), eventinvite.ProfileID(ei.ProfileID)).
+		QueryProfile()
+}
+
+// QueryEvent queries the event edge of a EventInvite.
+func (c *EventInviteClient) QueryEvent(ei *EventInvite) *EventQuery {
+	return c.Query().
+		Where(eventinvite.EventID(ei.EventID), eventinvite.ProfileID(ei.ProfileID)).
+		QueryEvent()
+}
+
+// Hooks returns the client hooks.
+func (c *EventInviteClient) Hooks() []Hook {
+	return c.hooks.EventInvite
+}
+
+// Interceptors returns the client interceptors.
+func (c *EventInviteClient) Interceptors() []Interceptor {
+	return c.inters.EventInvite
+}
+
+func (c *EventInviteClient) mutate(ctx context.Context, m *EventInviteMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&EventInviteCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&EventInviteUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&EventInviteUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&EventInviteDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown EventInvite mutation op: %q", m.Op())
 	}
 }
 
@@ -938,6 +1080,22 @@ func (c *ProfileClient) QueryEvents(pr *Profile) *EventQuery {
 	return query
 }
 
+// QueryInvitedTo queries the invitedTo edge of a Profile.
+func (c *ProfileClient) QueryInvitedTo(pr *Profile) *EventQuery {
+	query := (&EventClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(profile.Table, profile.FieldID, id),
+			sqlgraph.To(event.Table, event.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, profile.InvitedToTable, profile.InvitedToPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryFriendsData queries the friends_data edge of a Profile.
 func (c *ProfileClient) QueryFriendsData(pr *Profile) *FriendQuery {
 	query := (&FriendClient{config: c.config}).Query()
@@ -979,6 +1137,22 @@ func (c *ProfileClient) QueryEventsData(pr *Profile) *MemberQuery {
 			sqlgraph.From(profile.Table, profile.FieldID, id),
 			sqlgraph.To(member.Table, member.ProfileColumn),
 			sqlgraph.Edge(sqlgraph.O2M, true, profile.EventsDataTable, profile.EventsDataColumn),
+		)
+		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryInvitesData queries the invites_data edge of a Profile.
+func (c *ProfileClient) QueryInvitesData(pr *Profile) *EventInviteQuery {
+	query := (&EventInviteClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pr.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(profile.Table, profile.FieldID, id),
+			sqlgraph.To(eventinvite.Table, eventinvite.ProfileColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, profile.InvitesDataTable, profile.InvitesDataColumn),
 		)
 		fromV = sqlgraph.Neighbors(pr.driver.Dialect(), step)
 		return fromV, nil

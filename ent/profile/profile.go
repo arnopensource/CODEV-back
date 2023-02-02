@@ -21,12 +21,16 @@ const (
 	EdgeBookings = "bookings"
 	// EdgeEvents holds the string denoting the events edge name in mutations.
 	EdgeEvents = "events"
+	// EdgeInvitedTo holds the string denoting the invitedto edge name in mutations.
+	EdgeInvitedTo = "invitedTo"
 	// EdgeFriendsData holds the string denoting the friends_data edge name in mutations.
 	EdgeFriendsData = "friends_data"
 	// EdgeBookingsData holds the string denoting the bookings_data edge name in mutations.
 	EdgeBookingsData = "bookings_data"
 	// EdgeEventsData holds the string denoting the events_data edge name in mutations.
 	EdgeEventsData = "events_data"
+	// EdgeInvitesData holds the string denoting the invites_data edge name in mutations.
+	EdgeInvitesData = "invites_data"
 	// Table holds the table name of the profile in the database.
 	Table = "profiles"
 	// FriendsTable is the table that holds the friends relation/edge. The primary key declared below.
@@ -41,6 +45,11 @@ const (
 	// EventsInverseTable is the table name for the Event entity.
 	// It exists in this package in order to avoid circular dependency with the "event" package.
 	EventsInverseTable = "events"
+	// InvitedToTable is the table that holds the invitedTo relation/edge. The primary key declared below.
+	InvitedToTable = "event_invites"
+	// InvitedToInverseTable is the table name for the Event entity.
+	// It exists in this package in order to avoid circular dependency with the "event" package.
+	InvitedToInverseTable = "events"
 	// FriendsDataTable is the table that holds the friends_data relation/edge.
 	FriendsDataTable = "friends"
 	// FriendsDataInverseTable is the table name for the Friend entity.
@@ -62,6 +71,13 @@ const (
 	EventsDataInverseTable = "members"
 	// EventsDataColumn is the table column denoting the events_data relation/edge.
 	EventsDataColumn = "profile_id"
+	// InvitesDataTable is the table that holds the invites_data relation/edge.
+	InvitesDataTable = "event_invites"
+	// InvitesDataInverseTable is the table name for the EventInvite entity.
+	// It exists in this package in order to avoid circular dependency with the "eventinvite" package.
+	InvitesDataInverseTable = "event_invites"
+	// InvitesDataColumn is the table column denoting the invites_data relation/edge.
+	InvitesDataColumn = "profile_id"
 )
 
 // Columns holds all SQL columns for profile fields.
@@ -83,6 +99,9 @@ var (
 	// EventsPrimaryKey and EventsColumn2 are the table columns denoting the
 	// primary key for the events relation (M2M).
 	EventsPrimaryKey = []string{"event_id", "profile_id"}
+	// InvitedToPrimaryKey and InvitedToColumn2 are the table columns denoting the
+	// primary key for the invitedTo relation (M2M).
+	InvitedToPrimaryKey = []string{"event_id", "profile_id"}
 )
 
 // ValidColumn reports if the column name is valid (part of the table columns).

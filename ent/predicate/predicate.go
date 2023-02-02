@@ -15,6 +15,9 @@ type Booking func(*sql.Selector)
 // Event is the predicate function for event builders.
 type Event func(*sql.Selector)
 
+// EventInvite is the predicate function for eventinvite builders.
+type EventInvite func(*sql.Selector)
+
 // Friend is the predicate function for friend builders.
 type Friend func(*sql.Selector)
 
