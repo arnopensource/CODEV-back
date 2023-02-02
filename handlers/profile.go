@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"net/http"
-	"time"
 
 	_ent "github.com/abc3354/CODEV-back/ent"
 
@@ -143,35 +142,4 @@ func UpdateUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, "ok")
-}
-
-func AddFriend(c *gin.Context) {
-	user, err := checkToken(c)
-	if err != nil {
-		c.AbortWithError(http.StatusUnauthorized, err)
-		return
-	}
-
-	friendID, err := uuid.Parse(c.Param("id"))
-
-	if err != nil {
-		c.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
-
-	client := ent.Get()
-	_, err = client.Friend.
-		Create().
-		SetProfileID(user.ID).
-		SetFriendID(friendID).
-		SetAccepted(false).
-		SetSince(time.Now()).
-		Save(c)
-
-	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-
-	c.Status(http.StatusCreated)
 }
