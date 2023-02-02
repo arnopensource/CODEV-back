@@ -40,10 +40,11 @@ func main() {
 	r.GET("/bookings", handlers.GetUserBookings)
 
 	r.GET("/friends", handlers.GetFriends)
-	r.POST("/friends/:id", handlers.AddFriend)
-	r.PUT("/friends/:id", handlers.FriendRequestDecision)
-	r.DELETE("/friends/:id", handlers.RemoveFriend)
+	r.POST("/friends", handlers.AddFriend)
+	r.PUT("/friends", handlers.FriendRequestDecision)
+	r.DELETE("/friends", handlers.RemoveFriend)
 	r.GET("/friends/requests", handlers.GetFriendRequests)
+	r.GET("/friends/requests/sent", handlers.GetSentFriendRequests)
 
 	if err := r.Run(); err != nil {
 		log.Fatal(err)
