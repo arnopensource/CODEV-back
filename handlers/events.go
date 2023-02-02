@@ -1,7 +1,11 @@
 package handlers
 
 import (
+	"context"
+	"github.com/abc3354/CODEV-back/ent/event"
+	"github.com/google/uuid"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/abc3354/CODEV-back/ent/availableroom"
@@ -36,24 +40,13 @@ func CreateEvent(c *gin.Context) {
 
 	client := ent.Get()
 
-	bookedRoom, err := client.Room.Query().Where(room.ID(body.RoomID)).Only(c)
-	if err != nil {
-		c.AbortWithError(http.StatusBadRequest, err)
-		return
-	}
-
-	isAvailable, err := bookedRoom.QueryAvailability().Where(availableroom.And(
-		availableroom.StartLTE(body.Start),
-		availableroom.EndGTE(body.End),
-	)).Only(c)
+	isAvailable, err := checkRoom(body.RoomID, body.Start, body.End, c)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	if isAvailable == nil {
-		c.JSON(http.StatusBadRequest, map[string]any{
-			"error": "room is not available",
-		})
+	if !isAvailable {
+		c.JSON(http.StatusConflict, gin.H{"message": "Room is not available"})
 		return
 	}
 
@@ -63,12 +56,12 @@ func CreateEvent(c *gin.Context) {
 		return
 	}
 
-	event, err := client.Event.Create().
+	newEvent, err := client.Event.Create().
 		SetName(body.Name).
 		SetActivity(body.Activity).
 		SetStart(body.Start).
 		SetEnd(body.End).
-		SetRoom(bookedRoom).
+		SetRoomID(body.RoomID).
 		AddProfiles(creatorProfile).
 		Save(c)
 	if err != nil {
@@ -76,7 +69,7 @@ func CreateEvent(c *gin.Context) {
 		return
 	}
 
-	firstMember, err := client.Member.Query().Where(member.And(member.EventIDIn(event.ID), member.ProfileID(creatorProfile.ID))).Only(c)
+	firstMember, err := client.Member.Query().Where(member.And(member.EventIDIn(newEvent.ID), member.ProfileID(creatorProfile.ID))).Only(c)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -88,7 +81,30 @@ func CreateEvent(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, event)
+	c.JSON(http.StatusOK, newEvent)
+}
+
+func checkRoom(roomID int, start time.Time, end time.Time, ctx context.Context) (bool, error) {
+	client := ent.Get()
+
+	bookedRoom, err := client.Room.Query().Where(room.ID(roomID)).Only(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	isAvailable, err := bookedRoom.QueryAvailability().Where(availableroom.And(
+		availableroom.StartLTE(start),
+		availableroom.EndGTE(end),
+	)).Only(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	if isAvailable == nil {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 func GetMyEvents(c *gin.Context) {
@@ -113,4 +129,98 @@ func GetMyEvents(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, events)
+}
+
+type ModifyEventRequest struct {
+	Activity string    `json:"activity"`
+	Start    time.Time `json:"start"`
+	End      time.Time `json:"end"`
+	RoomID   int       `json:"roomId"`
+}
+
+func ModifyEvent(c *gin.Context) {
+	user, err := checkToken(c)
+	if err != nil {
+		c.AbortWithError(http.StatusUnauthorized, err)
+		return
+	}
+
+	eventID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	var body ModifyEventRequest
+	if err = c.ShouldBindJSON(&body); err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	client := ent.Get()
+
+	isAdmin, err := checkAdminRights(user.ID, eventID, c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	if !isAdmin {
+		c.JSON(http.StatusUnauthorized, map[string]any{
+			"error": "you are not admin",
+		})
+		return
+	}
+
+	eventToModify, err := client.Event.Query().Where(event.ID(eventID)).Only(c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	update := eventToModify.Update()
+
+	if body.Activity != "" {
+		update = update.SetActivity(body.Activity)
+	}
+
+	if !body.Start.IsZero() {
+		update = update.SetStart(body.Start)
+	}
+
+	if !body.End.IsZero() {
+		update = update.SetEnd(body.End)
+	}
+
+	if body.RoomID != 0 {
+		isAvailable, err := checkRoom(body.RoomID, body.Start, body.End, c)
+		if err != nil {
+			c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+		if !isAvailable {
+			c.JSON(http.StatusConflict, gin.H{"message": "Room is not available"})
+			return
+		}
+		update = update.SetRoomID(body.RoomID)
+	}
+
+	modifiedEvent, err := update.Save(c)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, modifiedEvent)
+}
+
+func checkAdminRights(userId uuid.UUID, eventId int, ctx context.Context) (bool, error) {
+	client := ent.Get()
+
+	userMembership, err := client.Member.Query().Where(member.And(member.EventID(eventId), member.ProfileID(userId))).Only(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	return userMembership.IsAdmin, nil
 }
