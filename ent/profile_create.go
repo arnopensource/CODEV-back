@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -59,6 +60,12 @@ func (pc *ProfileCreate) SetNillablePhone(s *string) *ProfileCreate {
 	if s != nil {
 		pc.SetPhone(*s)
 	}
+	return pc
+}
+
+// SetEmail sets the "email" field.
+func (pc *ProfileCreate) SetEmail(s string) *ProfileCreate {
+	pc.mutation.SetEmail(s)
 	return pc
 }
 
@@ -132,6 +139,9 @@ func (pc *ProfileCreate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (pc *ProfileCreate) check() error {
+	if _, ok := pc.mutation.Email(); !ok {
+		return &ValidationError{Name: "email", err: errors.New(`ent: missing required field "Profile.email"`)}
+	}
 	return nil
 }
 
@@ -184,6 +194,10 @@ func (pc *ProfileCreate) createSpec() (*Profile, *sqlgraph.CreateSpec) {
 	if value, ok := pc.mutation.Phone(); ok {
 		_spec.SetField(profile.FieldPhone, field.TypeString, value)
 		_node.Phone = value
+	}
+	if value, ok := pc.mutation.Email(); ok {
+		_spec.SetField(profile.FieldEmail, field.TypeString, value)
+		_node.Email = value
 	}
 	if nodes := pc.mutation.FriendsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

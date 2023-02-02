@@ -26,6 +26,7 @@ func (Profile) Fields() []ent.Field {
 		field.String("firstname").Optional(),
 		field.String("lastname").Optional(),
 		field.String("phone").Optional(),
+		field.String("email").Immutable(),
 	}
 }
 
