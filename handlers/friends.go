@@ -222,7 +222,7 @@ func GetFriendRequests(c *gin.Context) {
 			friend.FriendID(user.ID),
 			friend.Accepted(false),
 		)).
-		WithProfile().
+		QueryProfile().
 		All(c)
 
 	if err != nil {
@@ -248,7 +248,7 @@ func GetSentFriendRequests(c *gin.Context) {
 			friend.ProfileID(user.ID),
 			friend.Accepted(false),
 		)).
-		WithFriend().
+		QueryFriend().
 		All(c)
 
 	if err != nil {
